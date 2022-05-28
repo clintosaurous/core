@@ -1,0 +1,2 @@
+# core
+Clintosaurous Core Environment
