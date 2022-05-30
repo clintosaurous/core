@@ -1,0 +1,21 @@
+/var/log/clint/*log {
+    weekly
+    rotate 4
+    missingok
+    notifempty
+    create 660 root logmgr
+    postrotate
+        invoke-rc.d rsyslog rotate > /dev/null
+    endscript
+}
+
+/var/log/named/*log {
+    weekly
+    rotate 4
+    missingok
+    notifempty
+    create 660 root logmgr
+    postrotate
+        invoke-rc.d bind9 reload > /dev/null
+    endscript
+}

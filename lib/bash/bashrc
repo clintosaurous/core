@@ -1,0 +1,37 @@
+# /etc/bash.bashrc include file for the Clintosaurous core environment.
+#
+# Version: 1.0.0
+# Last Updated: 2022-05-30
+#
+# Change Log:
+#   v1.0.0:
+#       Initial creation. (2022-05-30)
+#
+# Note: See repository commit logs for change details.
+
+# Global variables.
+export LOGDIR=/var/log/clintosaurous
+export CLINTDIR=/opt/clintosaurous
+export CLINTCORE=$CLINTDIR/core
+export CLINTETC=/etc/clintosaurous
+
+# Add Clintosaurous core environment and Python venv to path.
+if [ -z `echo $PATH | grep $CLINTCORE/bin` ]; then
+    export PATH=$CLINTCORE/venv/bin:$PATH
+fi
+
+# Add Clintosaurous core Python libraries to PYTHONPATH.
+if [ -z `echo $PYTHONPATH | grep $CLINTCORE/lib/python` ]; then
+    export PYTHONPATH="${PYTHONPATH:+${PYTHONPATH}:}$CLINTCORE/lib/python"
+fi
+
+# Clintosaurous application package includes.
+for DIR in `ls $CLINTDIR`
+do
+    # Skip Clintosaurous core directory to avoid reloading this script.
+    if [ "$DIR" = 'core' ]; then continue ; fi
+    INCFILE=$CLINTDIR/$DIR/lib/bash/bashrc
+    if [ -e $INCFILE ]; then
+        . $INCFILE
+    fi
+done
