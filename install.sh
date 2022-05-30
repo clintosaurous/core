@@ -247,7 +247,7 @@ if [ -e $COREHOME ]; then
         echo "Clintosaurous core directory directory exists"
         echo "Ensuring up to date"
         cd $COREDIR
-        if [ -n "$BRANCH" ]; then git checkout $BRANCH ; fi
+        if [ -n "$BRANCH" ]; then cd $COREHOME &&  git checkout $BRANCH ; fi
         git pull
         if [ $? -ne 0 ]; then
             echo "Error updating Clintosaurous core repository" >&2
