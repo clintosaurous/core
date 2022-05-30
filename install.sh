@@ -247,8 +247,14 @@ if [ -e $COREHOME ]; then
         echo "Clintosaurous core directory directory exists"
         echo "Ensuring up to date"
         cd $COREDIR
-        if [ -n "$BRANCH" ]; then cd $COREHOME &&  git checkout $BRANCH ; fi
-        git pull
+        if [ -n "$BRANCH" ]; then
+            su - -c "cd $COREHOME && git checkout $BRANCH" $CLINTUSER
+            if [ $? -ne 0 ]; then
+                echo "Error changing Clintosaurous core repository branch" >&2
+                exit 1
+            fi
+        fi
+        su - -c "cd $COREHOME && git pull" $CLINTUSER
         if [ $? -ne 0 ]; then
             echo "Error updating Clintosaurous core repository" >&2
             exit 1
@@ -268,7 +274,13 @@ else
         echo "Error cloning Clintosaurous core repository" >&2
         exit 1
     fi
-    if [ -n "$BRANCH" ]; then cd $COREHOME && git checkout $BRANCH ; fi
+    if [ -n "$BRANCH" ]; then
+        su - -c "cd $COREHOME && git checkout $BRANCH" $CLINTUSER
+        if [ $? -ne 0 ]; then
+            echo "Error changing Clintosaurous core repository branch" >&2
+            exit 1
+        fi
+    fi
 fi
 
 echo "Validating environment setup files exist"
