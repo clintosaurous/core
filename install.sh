@@ -28,8 +28,8 @@
 #   5.  Create directory structure as needed.
 #   6.  Create Clintosaurous group and user. This can be suppressed with CLI
 #       options. Skipped if already exists via an `id` command.
-#   7.  Setup Clintosaurous user's default environment.
-#   8.  Clone or Clintosaurous core environment repository.
+#   7.  Clone or Clintosaurous core environment repository.
+#   8.  Setup Clintosaurous user's default environment.
 #   9.  Create default core configuration file if needed.
 #   10. Create `logrotate` configuration file if needed.
 #   11. Update ownership and privileges for Clintosaurous directories.
@@ -234,23 +234,6 @@ else
     echo "#### Skipping user creation from CLI option ####"
 fi
 
-echo "Validating environment setup files exist"
-for FILE in bashrc my.cnf profile
-do
-    DEFFILE=$COREHOME/lib/defaults/$FILE
-    UFILE=$USERHOME/.$FILE
-    if [ -e $UFILE ]; then
-        echo "$UFILE exists"
-    else
-        echo "Copying $DEFFILE to $UFILE"
-        cp $DEFFILE $UFILE
-        if [ $? -ne 0 ]; then
-            echo "Error copying $DEFFILE" >&2
-            exit 1
-        fi
-    fi
-done
-
 
 echo "#### Setting up core environment ####"
 
@@ -287,6 +270,23 @@ else
     fi
     if [ -n "$BRANCH" ]; then git checkout $BRANCH ; fi
 fi
+
+echo "Validating environment setup files exist"
+for FILE in bashrc my.cnf profile
+do
+    DEFFILE=$COREHOME/lib/defaults/$FILE
+    UFILE=$USERHOME/.$FILE
+    if [ -e $UFILE ]; then
+        echo "$UFILE exists"
+    else
+        echo "Copying $DEFFILE to $UFILE"
+        cp $DEFFILE $UFILE
+        if [ $? -ne 0 ]; then
+            echo "Error copying $DEFFILE" >&2
+            exit 1
+        fi
+    fi
+done
 
 echo "Validating core configuration files exist"
 CORECONF=$ETCDIR/core.yaml
