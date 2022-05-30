@@ -268,7 +268,7 @@ else
         echo "Error cloning Clintosaurous core repository" >&2
         exit 1
     fi
-    if [ -n "$BRANCH" ]; then git checkout $BRANCH ; fi
+    if [ -n "$BRANCH" ]; then cd $COREHOME && git checkout $BRANCH ; fi
 fi
 
 echo "Validating environment setup files exist"
