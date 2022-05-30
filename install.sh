@@ -29,10 +29,10 @@
 #   6.  Create Clintosaurous group and user. This can be suppressed with CLI
 #       options. Skipped if already exists via an `id` command.
 #   7.  Setup Clintosaurous user's default environment.
-#   8.  Create default core configuration file if needed.
-#   9.  Create `logrotate` configuration file if needed.
-#   10. Update ownership and privileges for Clintosaurous directories.
-#   11. Clone or Clintosaurous core environment repository.
+#   8.  Clone or Clintosaurous core environment repository.
+#   9.  Create default core configuration file if needed.
+#   10. Create `logrotate` configuration file if needed.
+#   11. Update ownership and privileges for Clintosaurous directories.
 #   12. Create Clintosaurous SSH keys if needed.
 #   13. Create Clintosaurous Python VENV if needed.
 #   14. Install required PIP modules.
@@ -254,6 +254,40 @@ done
 
 echo "#### Setting up core environment ####"
 
+# Reset directory ownership to be able to clone repository.
+echo "Setting directory ownership to $CLINTUSER:$CLINTGROUP"
+chown -R $CLINTUSER:$CLINTGROUP $USERHOME $ETCDIR $LOGDIR
+
+# Ensure repository is cloned.
+if [ -e $COREHOME ]; then
+    if [ -e $COREHOME/LICENSE ]; then
+        echo "Clintosaurous core directory directory exists"
+        echo "Ensuring up to date"
+        cd $COREDIR
+        if [ -n "$BRANCH" ]; then git checkout $BRANCH ; fi
+        git pull
+        if [ $? -ne 0 ]; then
+            echo "Error updating Clintosaurous core repository" >&2
+            exit 1
+        fi
+    else
+        echo "
+Clintosaurous core directory exists, but is not from from the GitHub
+repository!" >&2
+        exit 1
+    fi
+else
+    echo "Cloning Clintosaurous core repository"
+    # Must be ran as Clintosaurous user.
+    su - -c "git clone https://github.com/clintosaurous/core.git $COREHOME" \
+        $CLINTUSER
+    if [ $? -ne 0 ]; then
+        echo "Error cloning Clintosaurous core repository" >&2
+        exit 1
+    fi
+    if [ -n "$BRANCH" ]; then git checkout $BRANCH ; fi
+fi
+
 echo "Validating core configuration files exist"
 CORECONF=$ETCDIR/core.yaml
 if [ -e $CORECONF ]; then
@@ -319,37 +353,6 @@ fi
 echo "Updating directory and file permissions"
 chmod -R g+w,o-w $USERHOME $ETCDIR $LOGDIR
 chmod g+s $ETCDIR $LOGDIR
-
-# Ensure repository is cloned.
-if [ -e $COREHOME ]; then
-    if [ -e $COREHOME/LICENSE ]; then
-        echo "Clintosaurous core directory directory exists"
-        echo "Ensuring up to date"
-        cd $COREDIR
-        if [ -n "$BRANCH" ]; then git checkout $BRANCH ; fi
-        git pull
-        if [ $? -ne 0 ]; then
-            echo "Error updating Clintosaurous core repository" >&2
-            exit 1
-        fi
-    else
-        echo "
-Clintosaurous core directory exists, but is not from from the GitHub
-repository!" >&2
-        exit 1
-    fi
-else
-    echo "Cloning Clintosaurous core repository"
-    # Must be ran as Clintosaurous user.
-    su - -c "git clone https://github.com/clintosaurous/core.git $COREHOME" \
-        $CLINTUSER
-    if [ $? -ne 0 ]; then
-        echo "Error cloning Clintosaurous core repository" >&2
-        exit 1
-    fi
-    if [ -n "$BRANCH" ]; then git checkout $BRANCH ; fi
-fi
-
 
 # Setting up SSH keys is done after ownership/permissions are set.
 echo "#### Setting up SSH keys ####"

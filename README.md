@@ -47,11 +47,16 @@ first method.
 
 See `install.sh` documentation for more details on the installation process.
 
--   If you download the `install.sh` script and run it, the script will
-    perform all the steps needed to have a base Clintosaurous core
-    environment.
+-   Direct download and run the `install.sh` script.
 
-        curl -s https://github.com/clintosaurous/core/main/install.sh | sudo /bin/sh
+        curl -s https://raw.githubusercontent.com/clintosaurous/core/main/install.sh | sudo /bin/sh
+
+-   Download `install.sh` and run it manually.
+
+        curl -o /tmp/clintosaurous-core-install.sh \
+            https://raw.githubusercontent.com/clintosaurous/core/main/install.sh
+        chmod +x /tmp/clintosaurous-core-install.sh
+        sudo /tmp/clintosaurous-core-install.sh
 
 -   Or, download the repository and run the installation.
 
