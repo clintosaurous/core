@@ -15,7 +15,7 @@
 # This can be reran at any time to validate environment is setup. Run with
 # option -h or --help for run time information.
 #
-# The script will exit on error. It does not attempt to revert and changes
+# The script will exit on error. It does not attempt to revert any changes
 # that have already been made!
 #
 # Installation flow:
