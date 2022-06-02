@@ -15,7 +15,7 @@ LAST_UPDATE = '2022-06-02'
 
 
 # Required modules.
-from clintosaurous.cgi
+import clintosaurous.cgi
 
 
 def form_options():
