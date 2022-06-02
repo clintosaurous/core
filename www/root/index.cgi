@@ -35,7 +35,7 @@ if __name__ == "__main__":
 
     conf_file = cgi.form_values.getvalue("conf")
     if conf_file is None:
-        conf_file = '/etc/clintosaurous/www/root-index.yaml'
+        conf_file = '/etc/clintosaurous/www/www-root-index.yaml'
     with open(conf_file, newline='') as c:
         conf = yaml.safe_load(c)
     print(cgi.index_list(conf))
