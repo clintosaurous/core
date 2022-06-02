@@ -1,0 +1,31 @@
+a:link {
+    color:             #000000;
+    text-decoration:   none;
+}
+a:visited {
+    color:             #000000;
+    text-decoration:   none;
+}
+a:hover {
+    color:             #606060;
+    text-decoration:   underline;
+}
+a:active {
+    color:             #000000;
+    text-decoration:   underline;
+}
+
+body {
+    background-color:  #FEFEFE;
+    margin:            30px
+}
+
+h1 { background-color: #A6E2FF; }
+
+h2 { background-color: #D9F2FF; }
+
+h3 { background-color: #ECECFF; }
+
+pre { background-color: #FFFFE0; }
+
+td._podblock_ { background-color: #0091D7; }

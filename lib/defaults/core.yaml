@@ -1,0 +1,25 @@
+# Clintosaurous core tools configuration file.
+
+# See CONFIG.md in Clintosaurous core repository.
+#   https://github.com/clintosaurous/core
+
+# Clintosaurous user settings.
+user:
+    name: :::CLINTUSER:::
+    group: :::CLINTGROUP:::
+
+# Database settings.
+# database:
+#   host: <fqdn|ip>
+#   user: :::CLINTUSER:::
+#   passwd: <passwd>
+#   name: clintosaurous
+#   ssl: False
+#   ssl-ca: <ssl_ca_path>
+#   ssl-cert: <ssl_certificate_path>
+#   ssl-key: <ssl_cert_key_path>
+
+# Email settings.
+# email:
+#   server: <fqdn|ip>
+#   from: Someone <someone@example.com>
