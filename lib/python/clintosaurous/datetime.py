@@ -1,15 +1,15 @@
-#!/usr/bin/python3 -Bu
+#!/opt/clintosaurous/venv/bin/python3 -Bu
 
 """
 Provides date and time operations for Clintosaurous scripts.
 """
 
 # Version: 1.0.0
-# Last Updated: 2022-05-30
+# Last Updated: 2022-06-02
 #
 # Change Log:
 #   v1.0.0:
-#       Initial creation. (2022-05-30)
+#       Initial creation. (2022-06-02)
 #
 # Note: See repository commit logs for change details.
 
