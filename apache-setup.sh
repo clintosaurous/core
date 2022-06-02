@@ -309,7 +309,7 @@ fi
 
 # Ensure web index.cgi configuration directory.
 if [ -e $ETCDIR ]; then
-`    echo "WWW index page configuration directory exists"
+    echo "WWW index page configuration directory exists"
 else
     echo "Creating WWW index configuration directory $ETCDIR"
     mkdir $ETCDIR
@@ -325,7 +325,7 @@ else
     echo "Adding index page default configuration"
     cp $COREHOME/lib/defaults/www-index.yaml $ETCDIR/
     chown -R $CLINTUSER:$CLINTGROUP $ETCDIR/
-    chmod g+w $ETCDIR/
+    chmod g+w $ETCDIR/www-index.yaml
 fi
 
 
