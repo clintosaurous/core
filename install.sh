@@ -62,8 +62,10 @@ This can be reran at any time to validate environment is setup.
 sudo `basename $0` [-h | --help] \\
     [ -A | --no-apt-update \\
     [ -N | --no-create-user ] \\
-    [ -n | --user ] username [ -u | --uid ] UID \\
-    [ -p | --group ] group [ -g | --gid ] GID \\
+    [ -U | --user ] username \\
+    [ -u | --uid ] UID \\
+    [ -p | --group ] group \\
+    [ -g | --gid ] GID \\
     [ -I | --ignore-os \\
     [ -b | --branch ] branch-name
 
@@ -73,7 +75,7 @@ sudo `basename $0` [-h | --help] \\
         Skip updating the aptitude repository and installing system updates.
     -N | --no-create-user
         Skip checking for and creating user and user group.
-    -n | --username
+    -U | --username
         Username to use for the Clintosaurous tools. This must match on all
         servers that run the Clintosaurous environment. It is recommended to
         use the default username. Default: $CLINTUSER
@@ -111,7 +113,7 @@ do
         "--no-apt-update") APTUPDATE=0 ;;
         "-N") CREATEUSER=0 ;;
         "--no-create-user") CREATEUSER=0 ;;
-        "-n") shift ; CLINTUSER=$1 ;;
+        "-U") shift ; CLINTUSER=$1 ;;
         "--user") shift; CLINTUSER=$1 ;;
         "-u") shift ; USERUID=$1 ; CLIUID="--uid $1";;
         "--uid") shift ; USERUID=$1 ; CLIUID="--uid $1" ;;
@@ -134,11 +136,11 @@ if [ -z "$IGNOREOS" ] && \
     [ -z "`egrep -E 'Ubuntu\s+2[02].04' /etc/lsb-release 2>/dev/null`" ]
 then
     echo "
-Clintosaurous IPAM only support running on Ubuntu systems. Only tested and
+Clintosaurous tools only support running on Ubuntu systems. Only tested and
 supported on Ubuntu 20.04 and 22.04. It may work on older versions, but has
 not been tested and is not supported.
 
-Use -f or --force to override this error.
+Use -I or --ignore-os to override this error.
 " >&2
     exit 1
 fi
@@ -306,36 +308,13 @@ if [ -e $CORECONF ]; then
     echo "$CORECONF exists"
 else
     echo "Creating default configuraiton file at $CORECONF"
-    echo "# Clintosaurous core tools configuration file.
-
-# See CONFIG.md in Clintosaurous core repository.
-#   https://github.com/clintosaurous/core
-
-# Clintosaurous user settings.
-user:
-    username: $CLINTUSER
-    usergroup: $CLINTGROUP
-
-# Database settings.
-# database:
-#   host: <fqdn|ip>
-#   user: $CLINTUSER
-#   passwd: <passwd>
-#   name: <database_name>
-#   ssl: <boolean>
-#   ssl-ca: <ssl_ca_path>
-#   ssl-cert: <ssl_certificate_path>
-#   ssl-key: <ssl_cert_key_path>
-
-# Email settings.
-# email:
-#   server: <fqdn|ip>
-#   from: Someone <someone@example.com>
-" > $CORECONF
+    cp /opt/clintosaurous/core/lib/defaults/core.yaml $CORECONF
     if [ $? -ne 0 ]; then
         echo "Error creating core configuration file $CORECONF" >&2
         exit 1
     fi
+    sed -Ei "s|:::CLINTUSER:::|$CLINTUSER|" $CORECONF
+    sed -Ei "s|:::CLINTGROUP:::|$CLINTGROUP|" $CORECONF
 fi
 
 echo "Validating core configuration file exists"
@@ -343,15 +322,8 @@ LOGROTATE=/etc/logrotate.d/clintosaurous-core
 if [ -e $LOGROTATE ]; then
     echo "$LOGROTATE exists"
 else
-    echo "Creating logrotate file at $LOGROTATE"
-    echo "# Clintosaurous core tools logrotate configuration file.
-/var/log/clintosaurous/*log {
-    weekly
-    rotate 4
-    missingok
-    notifempty
-    compress
-}" > $LOGROTATE
+    echo "Copying logrotate file to $LOGROTATE"
+    cp $COREHOME/lib/defaults/logrotate $LOGROTATE
     chmod 644 $LOGROTATE
 fi
 
