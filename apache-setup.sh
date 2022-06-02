@@ -306,19 +306,25 @@ fi
 
 
 # Ensure web index.cgi configuration directory.
-if [ -e $ETCDIR/www ]; then
+INDEXDIR=/etc/clintosaurous/www
+if [ -e $INDEXDIR ]; then
     echo "WWW index page configuration directory exists"
 else
-    INDEXDIR=/etc/clintosaurous/www
     echo "Creating WWW index configuration directory $INDEXDIR"
     mkdir $INDEXDIR
     if [ $? -ne 0 ]; then
         echo "Error creating WWW index configuration directory" >&2
         exit 1
     fi
-    cp $COREDIR/lib/defaults/www-root-index.conf $INDEXDIR/www/
-    chown -R $CLINTUSER:$CLINTGROUP $INDEXDIR/www
-    chmod g+w $INDEXDIR/www
+fi
+
+if [ -e $INDEXDIR/www-root-index.yaml ]; then
+    echo "Default index page configuration exists"
+else
+    echo "Adding index page default configuration"
+    cp $COREHOME/lib/defaults/www-root-index.yaml $INDEXDIR/
+    chown -R $CLINTUSER:$CLINTGROUP $INDEXDIR/
+    chmod g+w $INDEXDIR/
 fi
 
 
