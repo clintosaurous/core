@@ -134,7 +134,10 @@ def time_breakdown(seconds):
         else:
             values.append(0)
 
-    values.append(seconds)
+    if seconds % 1:
+        values.append(round(seconds, 2))
+    else:
+        values.append(seconds)
 
     return values
 

@@ -37,7 +37,8 @@ CLINTUSER=clintosaurous
 CLINTGROUP=clintosaurous
 USERHOME=/opt/clintosaurous
 COREHOME=$USERHOME/core
-CORECONF=/etc/clintosaurous/core.yaml
+ETCDIR=/etc/clintosaurous
+CORECONF=$ETCDIR/core.yaml
 KEYFILE=/etc/apache2/default-www.key
 CERTFILE=/etc/apache2/default-www.pem
 
@@ -291,40 +292,40 @@ if [ ! -e /etc/apache2/sites-available/clintosaurous.conf ]; then
         fi
     fi
 
-    if [ ! -e /etc/apache2/htaccess ]; then
+    PASSFILE=/etc/apache2/htpasswd
+    if [ ! -e $PASSFILE ]; then
         echo "Setting up Clintosaurous user for web access"
         echo
-        htpasswd -c /etc/apache2/htaccess $CLINTUSER
+        htpasswd -c $PASSFILE $CLINTUSER
         if [ $? -ne 0 ]; then
             echo "Error creating Apache 2 user $CLINTUSER" >&2
             exit 1
         fi
-        chmod 660 /etc/apache2/htaccess
-        chown $CLINTUSER:$CLINTGROUP /etc/apache2/htaccess
+        chmod 660 $PASSFILE
+        chown $CLINTUSER:$CLINTGROUP $PASSFILE
     fi
 fi
 
 
 # Ensure web index.cgi configuration directory.
-INDEXDIR=/etc/clintosaurous/www
-if [ -e $INDEXDIR ]; then
-    echo "WWW index page configuration directory exists"
+if [ -e $ETCDIR ]; then
+`    echo "WWW index page configuration directory exists"
 else
-    echo "Creating WWW index configuration directory $INDEXDIR"
-    mkdir $INDEXDIR
+    echo "Creating WWW index configuration directory $ETCDIR"
+    mkdir $ETCDIR
     if [ $? -ne 0 ]; then
         echo "Error creating WWW index configuration directory" >&2
         exit 1
     fi
 fi
 
-if [ -e $INDEXDIR/www-root-index.yaml ]; then
+if [ -e $ETCDIR/www-index.yaml ]; then
     echo "Default index page configuration exists"
 else
     echo "Adding index page default configuration"
-    cp $COREHOME/lib/defaults/www-root-index.yaml $INDEXDIR/
-    chown -R $CLINTUSER:$CLINTGROUP $INDEXDIR/
-    chmod g+w $INDEXDIR/
+    cp $COREHOME/lib/defaults/www-index.yaml $ETCDIR/
+    chown -R $CLINTUSER:$CLINTGROUP $ETCDIR/
+    chmod g+w $ETCDIR/
 fi
 
 

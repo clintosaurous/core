@@ -69,9 +69,8 @@ class cgi:
         Copyright year of the calling script.
     """
 
-
     def __init__(
-        self, title, contact, header=True, home_url=None,
+        self, title, contact=None, header=True, home_url=None,
         icon='/images/logo.ico',
         logo='/images/logo.ico', css='/styles/standard.css',
         css_android='/styles/standard-android.css', version=None,
@@ -117,8 +116,13 @@ class cgi:
             print(cgi.end_page())
         """
 
-        return_txt = \
-            f'</div>\n\n{self.hr()}\n<div class="footer"><p class="footer">'
+        return_txt = f"""
+</div>
+
+<div class="footer">
+{self.hr()}
+<p class="footer">
+"""
 
         if self.version is not None:
             return_txt += f'Version {self.version}'
@@ -200,10 +204,10 @@ Copyright {self.copyright} by Clinton R McGraw. All Rights Reserved.
                 information on the options.
 
             action
-                URL to send a form submit to. Default is same URL as the form.
+                URL to send a form submit to. Default: Same URL as the form.
 
             method
-                Submit method, put/post.
+                Submit method, put/post. Default: 'put'
 
         buttons:
 
@@ -332,14 +336,14 @@ Copyright {self.copyright} by Clinton R McGraw. All Rights Reserved.
 
         method = method.lower()
 
-        return_txt = ""
+        return_txt = self.hr()
 
         if fields is not None:
             return_txt += \
                 '<div class="input_form">\n<table class="input_form">\n'
 
         return_txt += \
-            f'<form action="{action}" name="{name}" method="{method}>\n'
+            f'<form action="{action}" name="{name}" method="{method}">\n'
 
         if hidden is not None:
             return_txt += self._form_hidden(hidden) + '\n'
@@ -363,7 +367,7 @@ Copyright {self.copyright} by Clinton R McGraw. All Rights Reserved.
 
         if fields is not None:
             return_txt += '</form>\n</table>\n</div>\n'
-            return self.text_box(title, return_txt)
+            return_txt += self.text_box(title, return_txt)
 
         return_txt += '</form>\n'
 
@@ -372,7 +376,7 @@ Copyright {self.copyright} by Clinton R McGraw. All Rights Reserved.
     # End: form()
 
 
-    def _form_buttons(buttons, fields=True):
+    def _form_buttons(self, buttons, fields=True):
 
         # Internal function for building form button fields.
 
@@ -663,13 +667,13 @@ Copyright {self.copyright} by Clinton R McGraw. All Rights Reserved.
             print(cgi.hr())
         """
 
-        return '<hr class="{class_name}" />\n'
+        return f'<hr class="{class_name}" />\n'
 
     # End: hr()
 
 
     ##########################################################################
-    def _index_list(list_data, new_level=True):
+    def _index_list(self, list_data, new_level=True):
 
         """
         Internal function to build an index list for index.cgi.
@@ -694,7 +698,7 @@ Copyright {self.copyright} by Clinton R McGraw. All Rights Reserved.
                 return_txt += entry["title"]
 
             try:
-                return_txt += cgi._index_list(entry["links"], False)
+                return_txt += self._index_list(entry["links"], False)
             except KeyError:
                 True
 
@@ -740,7 +744,7 @@ Copyright {self.copyright} by Clinton R McGraw. All Rights Reserved.
 
         return_txt = (
             '<div class="index_list"><p class="index_list">\n' +
-            cgi._index_list(list_data) +
+            self._index_list(list_data) +
             '</p></div>\n'
         )
 
@@ -769,7 +773,11 @@ Copyright {self.copyright} by Clinton R McGraw. All Rights Reserved.
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
 <head>
     <title>{self.title}</title>
-    <link rev="made" href="mailto:{self.contact}" />
+"""
+        if self.contact is not None:
+            return_text += \
+                f'    <link rev="made" href="mailto:{self.contact}" />'
+        return_txt += f"""
     <link href="{self.icon}" rel="icon" />
     <link rel="stylesheet" type="text/css" href="{self.css}" />
     <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />

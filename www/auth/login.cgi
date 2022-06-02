@@ -43,13 +43,13 @@ def form_options():
 
 
 if __name__ == "__main__":
-    cgi = clintosaurous.cgi.cgi({
-        "title": "Clintosaurous Tools Login",
-        "version": VERSION,
-        "last_update": LAST_UPDATE,
-        "copyright": 2022
-    })
+    cgi = clintosaurous.cgi.cgi(
+        title="Clintosaurous Tools Login",
+        version=VERSION,
+        last_update=LAST_UPDATE,
+        copyright=2022
+    )
 
     print(cgi.start_page())
-    print(cgi.form(form_options()))
+    print(cgi.form(**form_options()))
     print(cgi.end_page())

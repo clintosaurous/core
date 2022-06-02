@@ -21,8 +21,7 @@ hr.divider {
 }
 
 body {
-    background-color:  #FEFEFE; */
-/*    font-size:         0.875em;    /* 14px/16=0.875em */
+    background-color:  #FEFEFE;
 }
 
 
@@ -32,7 +31,7 @@ body {
 
 div.header {
     margin:        auto;
-    width:         900px;
+    width:         1000px;
 }
 
 td.logo {
@@ -81,10 +80,12 @@ table.text_box {
     width:         100%;
 }
 
-.text_box_text {
+/*
+table.text_box_text {
 }
+*/
 
-.text_box_title {
+td.text_box_title {
     font-weight:   bold;
 }
 
@@ -106,15 +107,19 @@ td.data_table_data {
     vertical-align: text-top;
 }
 
+/*
 tr.data_table_data {
 }
+*/
 
 td.data_table_heading {
     font-weight:   bold;
 }
 
+/*
 tr.data_table_heading {
 }
+*/
 
 
 /*****************************************************************************
@@ -126,8 +131,10 @@ div.input_form {
     width:         90%;
 }
 
+/*
 table.input_form {
 }
+*/
 
 /* Title text on an input form. */
 .form_title {
@@ -155,15 +162,21 @@ td.form_field_title {
 }
 
 /* Form field input */
+/*
 .field_input {
 }
+*/
 
+/*
 td.field_input {
 }
+*/
 
 /* Form field ro <tr> tag */
+/*
 .field_row {
 }
+*/
 
 
 /*****************************************************************************
@@ -175,10 +188,14 @@ hr.index_list {
     width:         95%;
 }
 
+/*
 div.index_list {
     margins:       auto;
     width:         90%;
 }
+*/
 
+/*
 table.index_list {
 }
+*/
