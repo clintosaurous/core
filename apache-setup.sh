@@ -316,7 +316,7 @@ else
         echo "Error creating WWW index configuration directory" >&2
         exit 1
     fi
-    cp $COREDIR/lib/defaults/root-index.conf $ETCDIR/www/
+    cp $COREDIR/lib/defaults/www-root-index.conf $ETCDIR/www/
     chown -R $CLINTUSER:$CLINTGROUP $ETCDIR/www
     chmod g+w $ETCDIR/www
 fi
