@@ -132,7 +132,16 @@ done
 
 
 # Verify running on Ubuntu and supporte version.
-if [ -z "$IGNOREOS" ] && \
+if [ ! -e /etc/lsb-release ]; then
+    echo "
+lsb-release missing!
+
+Install and retry.
+
+apt install -y lsb-release
+" >&2
+    exit 1
+elif [ -z "$IGNOREOS" ] && \
     [ -z "`egrep -E 'Ubuntu\s+2[02].04' /etc/lsb-release 2>/dev/null`" ]
 then
     echo "
