@@ -12,6 +12,7 @@ It is built on shell, bash, and Python scripts.
     -   [Operating System](#operating-system)
 -   [Prerequisites](#prerequisites)
 -   [Installation](#installation)
+-   [Apache Installation](#apache_installation)
 
 ## System Requirements
 
@@ -33,8 +34,9 @@ Only Ubuntu 20.04 and 22.04 are tested and supported.
         like Apache as the Clintosaurous user.
     -   It can be Ubuntu server or desktop.
 2.  cURL or Git client installed.
-3.  Firewall access via HTTPS to GitHub.
-4.  Firewall access for Python PIP packages.
+3.  lsb-release apt package installed.
+4.  Firewall access via HTTPS to GitHub.
+5.  Firewall access for Python PIP packages.
 
 ## Installation
 
@@ -46,12 +48,15 @@ You can install this in a couple of different ways. I suggest you use the
 first method.
 
 See `install.sh` documentation for more details on the installation process.
+Run `install.sh` with `-h` or `--help` for CLI options.
 
 -   Direct download and run the `install.sh` script.
 
         curl -s https://raw.githubusercontent.com/clintosaurous/core/main/install.sh | sudo /bin/sh
 
--   Download `install.sh` and run it manually.
+-   Download `install.sh` and run it manually. This is useful if you are not
+    running the default configuration. You can specify alternate information
+    via CLI options. Run script with `-h` or `--help` for CLI options.
 
         curl -o /tmp/clintosaurous-core-install.sh \
             https://raw.githubusercontent.com/clintosaurous/core/main/install.sh
@@ -68,3 +73,20 @@ Login as the Clintosaurous user. Admins of the tools should be added to the
 Clintosaurous group. It will have read-write access.
 
     adduser <admin-user> clintosaurous
+
+## Apache Setup
+
+Clintosaurous core environment is required to be installed before Apache
+is setup.
+
+The installation script can be ran at any time. It will not overwrite existing
+configuration or environment files. Just run it from the
+`/opt/clintosaurous/core` directory.
+
+NOTE: If there are firewalls in use, ensure port 443 is allowed to the server.
+
+Default SSL key and certificate are installed. If you plan to use an alternate
+SSL key and certificate, you can specify the path with CLI options.
+
+See `apache-setup.sh` documentation for more details on the installation
+process. Run `apache-setup.sh` with `-h` or `--help` for CLI options.
