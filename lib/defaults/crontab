@@ -1,0 +1,16 @@
+##############################################################################
+# 1   2   3   4   5   6
+# *   *   *   *   *   <command>
+# |   |   |   |   |   |
+# |   |   |   |   |   +-- Command to be executed
+# |   |   |   |   +------ Day of the Week   (Range:  1-7, 1 = Monday)
+# |   |   |   +---------- Month of the Year (Range:  1-12)
+# |   |   +-------------- Day of the Month  (Range:  1-31)
+# |   +------------------ Hour              (Range:  0-23)
+# +---------------------- Minute            (Range:  0-59)
+##############################################################################
+
+CLINTCORE=/opt/clintosaurous
+LOGDIR=/var/log/clintosaurous
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+PYTHONPATH=/opt/clintosaurous/core/lib/python
