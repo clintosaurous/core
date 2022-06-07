@@ -37,16 +37,19 @@
 #   13. Create Clintosaurous Python VENV if needed.
 #   14. Install required PIP modules.
 #   15. Add Clintosaurous include to /etc/bash.bashrc, if needed.
+#   16. Validate root and clintosaurous user crontab.
 
 
 # Environment setup.
 APTUPDATE=1
 CREATEUSER=1
+REPOUPDATE=1
 CLINTUSER=clintosaurous
 CLINTGROUP=clintosaurous
 USERHOME=/opt/clintosaurous
 COREHOME=$USERHOME/core
 BASHINC=$COREHOME/lib/bash/bashrc
+PYLIB=$COREHOME/lib/python
 ETCDIR=/etc/clintosaurous
 LOGDIR=/var/log/clintosaurous
 
@@ -62,6 +65,7 @@ This can be reran at any time to validate environment is setup.
 sudo `basename $0` [-h | --help] \\
     [ -A | --no-apt-update \\
     [ -N | --no-create-user ] \\
+    [ -R | --no-repo-update \\
     [ -U | --user ] username \\
     [ -u | --uid ] UID \\
     [ -p | --group ] group \\
@@ -75,6 +79,8 @@ sudo `basename $0` [-h | --help] \\
         Skip updating the aptitude repository and installing system updates.
     -N | --no-create-user
         Skip checking for and creating user and user group.
+    -R | --no-repo-update
+        Skip performing a git pull to update the existing repository.
     -U | --username
         Username to use for the Clintosaurous tools. This must match on all
         servers that run the Clintosaurous environment. It is recommended to
@@ -113,6 +119,8 @@ do
         "--no-apt-update") APTUPDATE=0 ;;
         "-N") CREATEUSER=0 ;;
         "--no-create-user") CREATEUSER=0 ;;
+        "-R") REPOUPDATE=0 ;;
+        "--no-repo-update") REPOUPDATE=0 ;;
         "-U") shift ; CLINTUSER=$1 ;;
         "--user") shift; CLINTUSER=$1 ;;
         "-u") shift ; USERUID=$1 ; CLIUID="--uid $1";;
@@ -141,7 +149,7 @@ Install and retry.
 apt install -y lsb-release
 " >&2
     exit 1
-elif [ -z "$IGNOREOS" ] && \
+elif [ $IGNOREOS -ne 0 ] && \
     [ -z "`egrep -E 'Ubuntu\s+2[02].04' /etc/lsb-release 2>/dev/null`" ]
 then
     echo "
@@ -169,35 +177,35 @@ echo "Clintosaurous core directory: $COREHOME"
 
 
 # Install required packages.
-echo "#### Installing required aptitude packages ####"
-if [ $APTUPDATE ]; then
+if [ $APTUPDATE -ne 0 ]; then
+    echo "#### Installing required aptitude packages ####"
     echo "Updating system"
     apt update && apt upgrade -y
     if [ $? -ne 0 ]; then
         echo "Error updating aptitude packages" >&2
         exit 1
     fi
-fi
 
-echo "Installing required packages"
-apt install -y \
-    curl \
-    dkms \
-    git \
-    g++ \
-    gawk gawk-doc \
-    gcc \
-    make \
-    mysql-client \
-    net-tools \
-    python3 \
-        python3-doc python3-pip python3-venv python3-magic python3-pymysql \
-    traceroute \
-    unzip \
-    wget
-if [ $? -ne 0 ]; then
-    echo "Error installing required aptitude packages" >&2
-    exit 1
+    echo "Installing required packages"
+    apt install -y \
+        curl \
+        dkms \
+        git \
+        g++ \
+        gawk gawk-doc \
+        gcc \
+        make \
+        mysql-client \
+        net-tools \
+        python3 \
+            python3-doc python3-pip python3-venv python3-magic python3-pymysql \
+        traceroute \
+        unzip \
+        wget
+    if [ $? -ne 0 ]; then
+        echo "Error installing required aptitude packages" >&2
+        exit 1
+    fi
 fi
 
 
@@ -219,7 +227,7 @@ done
 
 
 # Setup user and group.
-if [ $CREATEUSER ]; then
+if [ $CREATEUSER -ne 0 ]; then
     echo "#### Setting up $CLINTUSER user and group ####"
     if [ -n "`id $CLINTUSER 2>/dev/null | grep 'uid='`" ]; then
         echo "User $CLINTUSER already exits"
@@ -240,6 +248,19 @@ if [ $CREATEUSER ]; then
             echo "Error adding user $CLINTUSER" >&2
             exit 1
         fi
+
+        echo "Adding default user environment environment files"
+        for FILE in bashrc my.cnf profile
+        do
+            DEFFILE=$COREHOME/lib/defaults/$FILE
+            UFILE=$USERHOME/.$FILE
+            echo "Copying $DEFFILE to $UFILE"
+            cp $DEFFILE $UFILE
+            if [ $? -ne 0 ]; then
+                echo "Error copying $DEFFILE" >&2
+                exit 1
+            fi
+        done
     fi
 else
     echo "#### Skipping user creation from CLI option ####"
@@ -251,13 +272,43 @@ echo "#### Setting up core environment ####"
 # Reset directory ownership to be able to clone repository.
 echo "Setting directory ownership to $CLINTUSER:$CLINTGROUP"
 chown -R $CLINTUSER:$CLINTGROUP $USERHOME $ETCDIR $LOGDIR
+chmod -R g+w,o= $ETCDIR
+
 
 # Ensure repository is cloned.
-if [ -e $COREHOME ]; then
-    if [ -e $COREHOME/LICENSE ]; then
-        echo "Clintosaurous core directory directory exists"
-        echo "Ensuring up to date"
-        cd $COREDIR
+if [ $REPOUPDATE -ne 0 ]; then
+    if [ -e $COREHOME ]; then
+        if [ -e $COREHOME/LICENSE ]; then
+            echo "Clintosaurous core directory directory exists"
+            echo "Ensuring up to date"
+            cd $COREHOME
+            if [ -n "$BRANCH" ]; then
+                su - -c "cd $COREHOME && git checkout $BRANCH" $CLINTUSER
+                if [ $? -ne 0 ]; then
+                    echo "Error changing Clintosaurous core repository branch" >&2
+                    exit 1
+                fi
+            fi
+            su - -c "cd $COREHOME && git pull" $CLINTUSER
+            if [ $? -ne 0 ]; then
+                echo "Error updating Clintosaurous core repository" >&2
+                exit 1
+            fi
+        else
+            echo "
+    Clintosaurous core directory exists, but is not from from the GitHub
+    repository!" >&2
+            exit 1
+        fi
+    else
+        echo "Cloning Clintosaurous core repository"
+        # Must be ran as Clintosaurous user.
+        su - -c "git clone https://github.com/clintosaurous/core.git $COREHOME" \
+            $CLINTUSER
+        if [ $? -ne 0 ]; then
+            echo "Error cloning Clintosaurous core repository" >&2
+            exit 1
+        fi
         if [ -n "$BRANCH" ]; then
             su - -c "cd $COREHOME && git checkout $BRANCH" $CLINTUSER
             if [ $? -ne 0 ]; then
@@ -265,65 +316,23 @@ if [ -e $COREHOME ]; then
                 exit 1
             fi
         fi
-        su - -c "cd $COREHOME && git pull" $CLINTUSER
-        if [ $? -ne 0 ]; then
-            echo "Error updating Clintosaurous core repository" >&2
-            exit 1
-        fi
-    else
-        echo "
-Clintosaurous core directory exists, but is not from from the GitHub
-repository!" >&2
-        exit 1
-    fi
-else
-    echo "Cloning Clintosaurous core repository"
-    # Must be ran as Clintosaurous user.
-    su - -c "git clone https://github.com/clintosaurous/core.git $COREHOME" \
-        $CLINTUSER
-    if [ $? -ne 0 ]; then
-        echo "Error cloning Clintosaurous core repository" >&2
-        exit 1
-    fi
-    if [ -n "$BRANCH" ]; then
-        su - -c "cd $COREHOME && git checkout $BRANCH" $CLINTUSER
-        if [ $? -ne 0 ]; then
-            echo "Error changing Clintosaurous core repository branch" >&2
-            exit 1
-        fi
     fi
 fi
 
-echo "Validating environment setup files exist"
-for FILE in bashrc my.cnf profile
-do
-    DEFFILE=$COREHOME/lib/defaults/$FILE
-    UFILE=$USERHOME/.$FILE
-    if [ -e $UFILE ]; then
-        echo "$UFILE exists"
-    else
-        echo "Copying $DEFFILE to $UFILE"
-        cp $DEFFILE $UFILE
-        if [ $? -ne 0 ]; then
-            echo "Error copying $DEFFILE" >&2
-            exit 1
-        fi
-    fi
-done
 
 echo "Validating core configuration files exist"
-CORECONF=$ETCDIR/core.yaml
+CORECONF=$ETCDIR/clintosaurous.yaml
 if [ -e $CORECONF ]; then
     echo "$CORECONF exists"
 else
     echo "Creating default configuraiton file at $CORECONF"
-    cp /opt/clintosaurous/core/lib/defaults/core.yaml $CORECONF
+    cp /opt/clintosaurous/core/lib/defaults/clintosaurous.yaml $CORECONF
     if [ $? -ne 0 ]; then
         echo "Error creating core configuration file $CORECONF" >&2
         exit 1
     fi
-    sed -Ei "s|:::CLINTUSER:::|$CLINTUSER|" $CORECONF
-    sed -Ei "s|:::CLINTGROUP:::|$CLINTGROUP|" $CORECONF
+    sed -Ei "s|<<<CLINTUSER>>>|$CLINTUSER|" $CORECONF
+    sed -Ei "s|<<<CLINTGROUP>>>|$CLINTGROUP|" $CORECONF
 fi
 
 echo "Validating core configuration file exists"
@@ -395,5 +404,49 @@ else
 # Clintosaurous environment include script.
 . $BASHINC" >> /etc/bash.bashrc
 fi
+
+
+echo "#### Validating crontabs ####"
+for U in root $CLINTUSER
+do
+    echo "Processing crontab for $U"
+    CRONTAB="`crontab -u $U -l 2>&1`"
+    if [ "$CRONTAB" = "no crontab for $U" ]; then
+        echo "Installing default crontab for $U"
+        crontab -u $U $COREHOME/lib/defaults/crontab
+        if [ $? -ne 0 ]; then
+            echo "Error installing $U crontab" >&2
+            exit 1
+        fi
+    else
+        PYPATH="`echo \"$CRONTAB\" | egrep 'PYTHONPATH='`"
+        if [ -n "$PYPATH" ]; then
+            if [ -z "`echo $PYPATH | grep $PYLIB`" ]; then
+                echo "PYTHONPATH missing Clintosaurous core in $U's crontab"\
+                    >&2
+                echo "   Append '$PYLIB' to PYTHONPATH in $U's crontab" >&2
+            fi
+        else
+            echo "PYTHONPATH missing in $U crontab" >&2
+            echo "   Add 'PYTHONPATH=$PYLIB' at the top of $U's crontab" >&2
+        fi
+
+        if [ -n "`echo \"$CRONTAB\" | grep CLINTCORE`" ]; then
+            echo "CLINTCORE set in $U's crontab"
+        else
+            echo "$U crontab exists but missing CLINTCORE." >&2
+            echo "Add 'CLINTCORE=$CLINTCORE'" >&2
+            echo "to the beginning of $U's crontab." >&2
+        fi
+
+        if [ -n "`echo \"$CRONTAB\" | grep LOGDIR`" ]; then
+            echo "LOGDIR set in $U's crontab"
+        else
+            echo "$U crontab exists but missing LOGDIR." >&2
+            echo "Add 'LOGDIR=$LOGDIR'" >&2
+            echo "to the beginning of $U's crontab." >&2
+        fi
+    fi
+done
 
 echo "#### Core setup complete ####"
