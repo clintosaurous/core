@@ -23,7 +23,7 @@ import yaml
 
 
 # Predefined variables.
-_core_conf = '/etc/clintosaurous/core.yaml'
+_core_conf = '/etc/clintosaurous/clintosaurous.yaml'
 
 
 def send(
@@ -54,12 +54,12 @@ def send(
 
     server
         FQDN or IP of the SMTP server to connect to. Default: localhost,
-        , but can be set in /etc/clintosaurous/core.yaml with 'server' under
+        , but can be set in /etc/clintosaurous/clintosaurous.yaml with 'server' under
         the 'email' section.
 
     from_addr
         E-Mail address to send e-mail from. Default: None, but can be set
-        in /etc/clintosaurous/core.yaml with 'from' under the 'email'
+        in /etc/clintosaurous/clintosaurous.yaml with 'from' under the 'email'
         section.
 
     html
