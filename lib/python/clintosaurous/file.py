@@ -5,11 +5,11 @@ Common Clintosaurous tools file functions.
 """
 
 # Version: 1.0.0
-# Last Updated: 2022-05-30
+# Last Updated: 2022-06-04
 #
 # Change Log:
 #   v1.0.0:
-#       Initial creation. (2022-05-30)
+#       Initial creation. (2022-06-04)
 #
 # Note: See repository commit logs for change details.
 
@@ -42,7 +42,7 @@ def datestamp(usr_time=None):
 
     return clintosaurous.datetime.datestamp(usr_time)
 
-# End datestamp()
+# End: datestamp()
 
 
 def lock():
@@ -89,7 +89,7 @@ def lock():
 
     atexit.register(unlock)
 
-# End lock()
+# End: lock()
 
 
 def timestamp(usr_time=None, tz=True):
@@ -115,7 +115,7 @@ def timestamp(usr_time=None, tz=True):
         clintosaurous.datetime.timestamp(usr_time, tz=tz).lower()
     )
 
-# End timestamp()
+# End: timestamp()
 
 
 def unlock():
@@ -129,4 +129,4 @@ def unlock():
     if os.path.exists(lock_file):
         os.remove(lock_file)
 
-# End unlock()
+# End: unlock()
