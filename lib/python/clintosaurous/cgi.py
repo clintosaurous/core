@@ -159,6 +159,19 @@ Copyright {self.copyright} by Clinton R McGraw. All Rights Reserved.
     # End: end_page()
 
 
+    def error_msg(self, msg):
+
+        """
+        Ouput a formatted error message.
+
+            print(cgi.error_msg(string))
+        """
+
+        return f'<p class="error_message\">{msg}</p>\n'
+
+    # End: error_msg()
+
+
     def escape(self, decoded):
 
         """
@@ -167,7 +180,7 @@ Copyright {self.copyright} by Clinton R McGraw. All Rights Reserved.
 
         return html.escape(decoded)
 
-    # End: encode_html()
+    # End: escape_html()
 
 
     def form(
@@ -336,11 +349,10 @@ Copyright {self.copyright} by Clinton R McGraw. All Rights Reserved.
 
         method = method.lower()
 
-        return_txt = self.hr()
+        return_txt = '<div class="input_form">'
 
         if fields is not None:
-            return_txt += \
-                '<div class="input_form">\n<table class="input_form">\n'
+            return_txt += '<table class="input_form">\n'
 
         return_txt += \
             f'<form action="{action}" name="{name}" method="{method}">\n'
@@ -349,13 +361,6 @@ Copyright {self.copyright} by Clinton R McGraw. All Rights Reserved.
             return_txt += self._form_hidden(hidden) + '\n'
 
         if fields is not None:
-            if comment is not None:
-                return_txt += (
-                    '<tr class="form_comment">\n' +
-                    '<td class="form_comment" colspan="2">{comment}</td>\n' +
-                    '</tr>\n'
-                )
-
             return_txt += self._form_fields(fields) + '\n'
 
         if buttons is not None:
@@ -365,11 +370,14 @@ Copyright {self.copyright} by Clinton R McGraw. All Rights Reserved.
                 field_data = False
             return_txt += self._form_buttons(buttons, field_data) + '\n'
 
-        if fields is not None:
-            return_txt += '</form>\n</table>\n</div>\n'
-            return_txt += self.text_box(title, return_txt)
+        return_txt += '</form>'
 
-        return_txt += '</form>\n'
+        if fields is not None:
+            return_txt += '</table>\n'
+
+        return_txt += '</div>'
+
+        return_txt = self.text_box(return_txt, title=title, comment=comment)
 
         return return_txt
 
@@ -434,10 +442,7 @@ Copyright {self.copyright} by Clinton R McGraw. All Rights Reserved.
                 except KeyError:
                     True
 
-                if field["type"] == 'password':
-                    value = None
-
-                elif override:
+                if override:
                     try:
                         value = field["value"]
                     except KeyError:
@@ -560,7 +565,7 @@ Copyright {self.copyright} by Clinton R McGraw. All Rights Reserved.
 
                 return_txt += (
                     f'<label><input type="checkbox" name="{field["name"]}" ' +
-                    f'value="{field["value"]}"' +
+                    f'value="{field["value"]}" ' +
                     f'class="field_input"{checked} /></label>\n'
                 )
 
@@ -622,17 +627,11 @@ Copyright {self.copyright} by Clinton R McGraw. All Rights Reserved.
             except KeyError:
                 override = False
 
-            try:
-                field["title"]
-            except KeyError:
-                field["title"] = field["name"]
-
             if override:
                 value = field["value"]
             else:
-                try:
-                    value = self.form_values.getvalue(field["name"])
-                except KeyError:
+                value = self.form_values.getvalue(field["name"])
+                if value is None:
                     value = field["value"]
 
             return_txt += (
@@ -645,20 +644,6 @@ Copyright {self.copyright} by Clinton R McGraw. All Rights Reserved.
     # End: _form_hidden()
 
 
-    def error_msg(self, msg):
-
-        """
-        Ouput a formatted error message.
-
-            print(cgi.error_msg(string))
-        """
-
-        return f'<p class="error_message\">{msg}</p>\n'
-
-    # End: error_msg()
-
-
-    ##########################################################################
     def hr(self, class_name="divider"):
 
         """
@@ -672,7 +657,6 @@ Copyright {self.copyright} by Clinton R McGraw. All Rights Reserved.
     # End: hr()
 
 
-    ##########################################################################
     def _index_list(self, list_data, new_level=True):
 
         """
@@ -752,7 +736,7 @@ Copyright {self.copyright} by Clinton R McGraw. All Rights Reserved.
 
     # End: index_list()
 
-    ##########################################################################
+
     def start_page(self):
 
         """
@@ -891,8 +875,7 @@ Copyright {self.copyright} by Clinton R McGraw. All Rights Reserved.
     # End: table_split()
 
 
-    ##########################################################################
-    def text_box(self, html, title=None):
+    def text_box(self, html, title=None, comment=None):
 
         """
         Build a text box.
@@ -906,15 +889,15 @@ Copyright {self.copyright} by Clinton R McGraw. All Rights Reserved.
                 HTML to be put in the box contents.
         """
 
-        if html is None:
-            return ''
-
         return_txt = '<div class="text_box">\n'
 
         if title is not None:
-            return_txt += '<p class="text_box_title">{title}</p>\n'
+            return_txt += f'<p class="text_box_title">{title}</p>\n'
 
-        return_txt += '<p class="text_box_txt">{html}</p>\n</dev>\n'
+        if comment is not None:
+            return_txt += f'<p class="comment">{comment}</p>\n'
+
+        return_txt += f'<p class="text_box_txt">{html}</p>\n</dev>\n'
 
         return return_txt
 
