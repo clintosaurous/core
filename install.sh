@@ -43,6 +43,7 @@
 # Environment setup.
 APTUPDATE=1
 CREATEUSER=1
+IGNOREOS=0
 REPOUPDATE=1
 CLINTUSER=clintosaurous
 CLINTGROUP=clintosaurous
@@ -140,26 +141,27 @@ done
 
 
 # Verify running on Ubuntu and supporte version.
-if [ ! -e /etc/lsb-release ]; then
-    echo "
-lsb-release missing!
+if [ $IGNOREOS -eq 0 ]; then
+    if [ ! -e /etc/lsb-release ]; then
+        echo "
+    lsb-release missing!
 
-Install and retry.
+    Install and retry.
 
-apt install -y lsb-release
-" >&2
-    exit 1
-elif [ $IGNOREOS -ne 0 ] && \
-    [ -z "`egrep -E 'Ubuntu\s+2[02].04' /etc/lsb-release 2>/dev/null`" ]
-then
-    echo "
-Clintosaurous tools only support running on Ubuntu systems. Only tested and
-supported on Ubuntu 20.04 and 22.04. It may work on older versions, but has
-not been tested and is not supported.
+    apt install -y lsb-release
+    " >&2
+        exit 1
+    elif [ -z "`egrep -E 'Ubuntu\s+2[02].04' /etc/lsb-release 2>/dev/null`" ]
+    then
+        echo "
+    Clintosaurous tools only support running on Ubuntu systems. Only tested and
+    supported on Ubuntu 20.04 and 22.04. It may work on older versions, but has
+    not been tested and is not supported.
 
-Use -I or --ignore-os to override this error.
-" >&2
-    exit 1
+    Use -I or --ignore-os to override this error.
+    " >&2
+        exit 1
+    fi
 fi
 
 
