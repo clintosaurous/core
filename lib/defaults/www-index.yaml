@@ -1,3 +1,5 @@
+# Default index page menu items. See documentation in the cgi.index_list
+# method in clintosaurous.cgi for format of the configuration file.
 - title: Clintosaurous Tools
   links:
     - title: www.clintosaurous.com
