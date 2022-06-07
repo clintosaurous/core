@@ -23,7 +23,7 @@ import yaml
 
 
 # Predefined variables.
-_core_conf = '/etc/clintosaurous/core.yaml'
+_core_conf = '/etc/clintosaurous/clintosaurous.yaml'
 
 
 # CLI options.
