@@ -250,19 +250,6 @@ if [ $CREATEUSER -ne 0 ]; then
             echo "Error adding user $CLINTUSER" >&2
             exit 1
         fi
-
-        echo "Adding default user environment environment files"
-        for FILE in bashrc my.cnf profile
-        do
-            DEFFILE=$COREHOME/lib/defaults/$FILE
-            UFILE=$USERHOME/.$FILE
-            echo "Copying $DEFFILE to $UFILE"
-            cp $DEFFILE $UFILE
-            if [ $? -ne 0 ]; then
-                echo "Error copying $DEFFILE" >&2
-                exit 1
-            fi
-        done
     fi
 else
     echo "#### Skipping user creation from CLI option ####"
@@ -321,7 +308,6 @@ if [ $REPOUPDATE -ne 0 ]; then
     fi
 fi
 
-
 echo "Validating core configuration files exist"
 CORECONF=$ETCDIR/clintosaurous.yaml
 if [ -e $CORECONF ]; then
@@ -336,6 +322,21 @@ else
     sed -Ei "s|<<<CLINTUSER>>>|$CLINTUSER|" $CORECONF
     sed -Ei "s|<<<CLINTGROUP>>>|$CLINTGROUP|" $CORECONF
 fi
+
+echo "Checking default user environment environment files"
+for FILE in bashrc my.cnf profile
+do
+    DEFFILE=$COREHOME/lib/defaults/$FILE
+    UFILE=$USERHOME/.$FILE
+    if [ !-e $UFILE ]; then
+        echo "Copying $DEFFILE to $UFILE"
+        cp $DEFFILE $UFILE
+        if [ $? -ne 0 ]; then
+            echo "Error copying $DEFFILE" >&2
+            exit 1
+        fi
+    fi
+done
 
 echo "Validating core configuration file exists"
 LOGROTATE=/etc/logrotate.d/clintosaurous-core
