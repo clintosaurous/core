@@ -85,7 +85,7 @@ table.text_box_text {
 }
 */
 
-td.text_box_title {
+p.text_box_title {
     font-weight:   bold;
 }
 
@@ -131,18 +131,7 @@ div.input_form {
     width:         90%;
 }
 
-/*
-table.input_form {
-}
-*/
-
-/* Title text on an input form. */
-.form_title {
-    font-weight:   bold;
-}
-
-.form_comment {
-    font-size:     0.9em;      /* relative to <body> font-size */
+.comment {
     text-align:    left;
     vertical-align: top;
 }
@@ -150,9 +139,6 @@ table.input_form {
 /* Form field title/display name */
 .form_field_title {
     vertical-align: top;
-}
-
-td.form_field_title {
     white-space:   nowrap;
 }
 
