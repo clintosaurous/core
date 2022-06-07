@@ -33,10 +33,11 @@
 # Environment setup.
 echo "#### Setting initial environment ####"
 APTUPDATE=1
+REPOUPDATE=1
 USERHOME=/opt/clintosaurous
 COREHOME=$USERHOME/core
 ETCDIR=/etc/clintosaurous
-CORECONF=$ETCDIR/core.yaml
+CORECONF=$ETCDIR/clintosaurous.yaml
 KEYFILE=/etc/apache2/default-www.key
 CERTFILE=/etc/apache2/default-www.pem
 
@@ -78,6 +79,7 @@ This can be reran at any time to validate environment is setup.
 
 sudo `basename $0` [-h | --help] \\
     [ -A | --no-apt-update \\
+    [ -R | --no-repo-update \\
     [ -S | --server-name \\
     [ -a | --server-admin \\
     [ -k | --ssl-key /key/file/path.key \\
@@ -90,6 +92,8 @@ sudo `basename $0` [-h | --help] \\
         Display this help message.
     -A | --no-apt-update
         Skip updating the aptitude repository and installing system updates.
+    -R | --no-repo-update
+        Skip performing a git pull to update the existing repository.
     -S | --server-name
         FQDN of Apache server.
     -a | --server-admin
@@ -121,6 +125,8 @@ do
         "--help") usage ;;
         "-A") APTUPDATE=0 ;;
         "--no-apt-update") APTUPDATE=0 ;;
+        "-R") REPOUPDATE=0 ;;
+        "--no-repo-update") REPOUPDATE=0 ;;
         "-S") shift ; SERVERNAME=$1 ;;
         "--server-name") shift ; SERVERNAME=$1 ;;
         "-a") shift ; SERVERADMIN=$1 ;;
@@ -169,66 +175,69 @@ echo "#### Clintosaurous Apache initial setup starting ####"
 
 # Install required packages.
 echo "Installing required aptitude packages"
-if [ $APTUPDATE ]; then
+if [ $APTUPDATE -ne 0 ]; then
     echo "Updating system"
     apt update && apt upgrade -y
     if [ $? -ne 0 ]; then
         echo "Error updating aptitude packages" >&2
         exit 1
     fi
-fi
 
-echo "Installing required aptitude packages"
-apt install -y apache2 apache2-suexec-pristine
-if [ $? -ne 0 ]; then
-    echo "Error installing required aptitude packages" >&2
-    exit 1
-fi
+    echo "Installing required aptitude packages"
+    apt install -y apache2 apache2-suexec-pristine
+    if [ $? -ne 0 ]; then
+        echo "Error installing required aptitude packages" >&2
+        exit 1
+    fi
 
-# Create httpd sym link for the apache2 server.
-if [ ! -e /lib/systemd/system/httpd.service ]; then
-    ln -s /lib/systemd/system/apache2.service \
-        /lib/systemd/system/httpd.service
-    systemctl daemon-reload
-fi
+    # Create httpd sym link for the apache2 server.
+    if [ ! -e /lib/systemd/system/httpd.service ]; then
+        ln -s /lib/systemd/system/apache2.service \
+            /lib/systemd/system/httpd.service
+        systemctl daemon-reload
+    fi
 
-# Enable Apache modules.
-echo "Enabling apache2 modules"
-a2enmod auth_form cgi request rewrite session session_cookie ssl socache_shmcb
-if [ $? -ne 0 ]; then
-    echo "Error enabling Apache required modules" >&2
-    exit 1
-fi
+    # Enable Apache modules.
+    echo "Enabling apache2 modules"
+    a2enmod auth_form cgi request rewrite session session_cookie ssl socache_shmcb
+    if [ $? -ne 0 ]; then
+        echo "Error enabling Apache required modules" >&2
+        exit 1
+    fi
 
-echo "Enabling Apache"
-systemctl enable apache2
-if [ $? -ne 0 ]; then
-    echo "Error enabling Apache" >&2
-    exit 1
+    echo "Enabling Apache"
+    systemctl enable apache2
+    if [ $? -ne 0 ]; then
+        echo "Error enabling Apache" >&2
+        exit 1
+    fi
 fi
 
 
 # Ensure repository is cloned and up to date.
-if [ -e $COREHOME ]; then
-    if [ -e $COREHOME/LICENSE ]; then
-        echo "Clintosaurous core directory directory exists"
-        echo "Ensuring up to date"
-        # Must be ran as Clintosaurous user.
-        su - -c "cd $COREHOME && git pull" $CLINTUSER
-        if [ $? -ne 0 ]; then
-            echo "Error updating Clintosaurous core repository" >&2
+if [ $REPOUPDATE -ne 0 ]; then
+    if [ -e $COREHOME ]; then
+        if [ -e $COREHOME/LICENSE ]; then
+            echo "Clintosaurous core directory directory exists"
+            echo "Ensuring up to date"
+            # Must be ran as Clintosaurous user.
+            su - -c "cd $COREHOME && git pull" $CLINTUSER
+            if [ $? -ne 0 ]; then
+                echo "Error updating Clintosaurous core repository" >&2
+                exit 1
+            fi
+        else
+            echo "Clintosaurous core directory exists, but is not from the" >&2
+            echo "GitHub repository!" >&2
             exit 1
         fi
     else
-        echo "Clintosaurous core directory exists, but is not from the" >&2
-        echo "GitHub repository!" >&2
+        echo "Clintosaurous core envirnoment must be installed and setup." >&2
+        echo "Run the core installation (install.sh) and then retry." >&2
         exit 1
     fi
-else
-    echo "Clintosaurous core envirnoment must be installed and setup." >&2
-    echo "Run the core installation (install.sh) and then retry." >&2
-    exit 1
 fi
+
 
 # Ensure configuration file exists. If not, add it and enable it.
 if [ ! -e /etc/apache2/sites-available/clintosaurous.conf ]; then
@@ -273,16 +282,16 @@ if [ ! -e /etc/apache2/sites-available/clintosaurous.conf ]; then
     sed -Ei "s/APACHE_RUN_GROUP=.+/APACHE_RUN_GROUP=$CLINTGROUP/" \
         /etc/apache2/envvars
     echo "Setting Apache server name"
-    sed -Ei "s/:::server-name:::/$SERVERNAME/" \
+    sed -Ei "s/<<<server-name>>>/$SERVERNAME/" \
         /etc/apache2/sites-available/clintosaurous.conf
     echo "Setting Apache server admin"
-    sed -Ei "s/:::server-admin:::/$SERVERADMIN/" \
+    sed -Ei "s/<<<server-admin>>>/$SERVERADMIN/" \
         /etc/apache2/sites-available/clintosaurous.conf
     echo "Setting Apache SSL key file"
-    sed -Ei "s|:::key-file:::|$KEYFILE|" \
+    sed -Ei "s|<<<key-file>>>|$KEYFILE|" \
         /etc/apache2/sites-available/clintosaurous.conf
     echo "Setting Apache SSL certificate file"
-    sed -Ei "s|:::cert-file:::|$CERTFILE|" \
+    sed -Ei "s|<<<cert-file>>>|$CERTFILE|" \
         /etc/apache2/sites-available/clintosaurous.conf
 
     if [ ! -e /etc/apache2/sites-enabled/clintosaurous.conf ]; then
@@ -308,44 +317,32 @@ if [ ! -e /etc/apache2/sites-available/clintosaurous.conf ]; then
     fi
 fi
 
-
-# Ensure web index.cgi configuration directory.
-if [ -e $ETCDIR ]; then
-    echo "WWW index page configuration directory exists"
-else
-    echo "Creating WWW index configuration directory $ETCDIR"
-    mkdir $ETCDIR
-    if [ $? -ne 0 ]; then
-        echo "Error creating WWW index configuration directory" >&2
-        exit 1
-    fi
-fi
-
+# Validate default index configuration file exits.
 if [ -e $ETCDIR/www-index.yaml ]; then
     echo "Default index page configuration exists"
 else
     echo "Adding index page default configuration"
     cp $COREHOME/lib/defaults/www-index.yaml $ETCDIR/
     chown -R $CLINTUSER:$CLINTGROUP $ETCDIR/
-    chmod g+w $ETCDIR/www-index.yaml
+    chmod g+w,o= $ETCDIR/www-index.yaml
 fi
 
 
-ARELOAD=1
+APACHERELOAD=1
 if [ ! -e "$KEYFILE" ]; then
     echo "SSL key file $KEYFILE does not exist" >&2
     echo "Update Apache configuration with correct key location, or" >&2
     echo "place key at $KEYFILE" >&2
-    ARELOAD=0
+    APACHERELOAD=0
 fi
 if [ ! -e "$CERTFILE" ]; then
     echo "SSL certificate file $CERTFILE does not exist" >&2
     echo "Update Apache configuration with correct certificate" >&2
     echo "location, or place key at $KEYFILE" >&2
-    ARELOAD=0
+    APACHERELOAD=0
 fi
 
-if [ $ARELOAD -ne 0 ]; then
+if [ $APACHERELOAD -ne 0 ]; then
     echo "Restarting Apache service"
     systemctl restart apache2
     if [ $? -ne 0 ]; then
