@@ -12,7 +12,40 @@
 # Note: See repository commit logs for change details.
 
 
-#### Function definitions ####
+# Global variables.
+export CLINTHOME=/opt/clintosaurous
+export CLINTCORE=$CLINTHOME/core
+export CLINTETC=/etc/clintosaurous
+export CLINTLOG=/var/log/clintosaurous
+export _STARTDATETIME=`date +%s`
+
+
+check_login_user () {
+    if [ -z "$1" ]; then
+        echo "You must supply a username to check_login_user()" >&2
+        exit 1
+    elif [ "`whoami`" != "$1" ]; then
+        echo "You must be $1 to run this!" >&2
+        exit 1
+    fi
+}   # End function check_root
+
+
+check_valid_os () {
+    ERRMSG="Running unsupported OS or OS version. Only Ubuntu 20.04 or 22.04"
+    ERRMSG="$ERRMSG are supported. The tools may run on other OSes, but they"
+    ERRMSG="$ERRMSG have not been tested and are not currently supported."
+    if [ ! -e /etc/os-release ]; then
+        echo $ERRMSG >&2
+        exit 1
+    fi
+    . /etc/os-release
+    if [ ! "`echo "$PRETTY_NAME" | egrep 'Ubuntu 2[02].04'`" ]; then
+        echo $ERRMSG >&2
+        exit 1
+    fi
+}
+
 
 # Outputs a date stamp in YYYY-MM-DD format.
 datestamp ()
@@ -20,6 +53,7 @@ datestamp ()
     echo `date +%F`
     return
 }
+
 
 # Output supplied error message(s) and exit with exit code 1.
 error_out ()
@@ -33,6 +67,7 @@ error_out ()
 
 }   # End function error_out
 
+
 # Output supplied log message(s) with prepended timestamps.
 log_msg ()
 {
@@ -45,6 +80,7 @@ log_msg ()
     done
 
 }   # End function log_msg
+
 
 # Output log message(s) supplied via STDIN with prepended timestamps.
 log_stdin ()
@@ -61,6 +97,7 @@ log_stdin ()
 
 }   # End function log_msg
 
+
 # Output the current run time of the script.
 run_time ()
 {
@@ -69,6 +106,7 @@ run_time ()
     echo `expr \( $_CURRENTDATETIME - $_STARTDATETIME \) | seconds_breakdown`
 
 }
+
 
 # Output a breakdown of seconds into minutes, hours, and days.
 seconds_breakdown ()
@@ -157,6 +195,7 @@ seconds_breakdown ()
 
 }   # End function seconds_breakdown
 
+
 # Output a timestamp in logging format.
 timestamp ()
 {
@@ -164,6 +203,7 @@ timestamp ()
     date +"%F %T %Z"
 
 }   # End function timestamp
+
 
 # Help.
 _usage ()
@@ -218,11 +258,6 @@ Functions:
 
 # Process CLI options.
 if [ "$1" = "--help" ] || [ "$1" = "-h" ] ; then _usage ; fi
-
-
-# Global variables.
-export LOGDIR=/var/log/clintosaurous
-export _STARTDATETIME=`date +%s`
 
 
 # Environment variables.
