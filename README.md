@@ -58,8 +58,7 @@ Run `install.sh` with `-h` or `--help` for CLI options.
     running the default configuration. You can specify alternate information
     via CLI options. Run script with `-h` or `--help` for CLI options.
 
-        curl -o /tmp/clintosaurous-core-install.sh \
-            https://raw.githubusercontent.com/clintosaurous/core/main/install.sh
+        curl -o /tmp/clintosaurous-core-install.sh https://raw.githubusercontent.com/clintosaurous/core/main/install.sh
         chmod +x /tmp/clintosaurous-core-install.sh
         sudo /tmp/clintosaurous-core-install.sh
 
@@ -77,16 +76,19 @@ Clintosaurous group. It will have read-write access.
 ## Apache Setup
 
 Clintosaurous core environment is required to be installed before Apache
-is setup.
+is setup. Apache setup must be performed as root.
 
 The installation script can be ran at any time. It will not overwrite existing
 configuration or environment files. Just run it from the
 `/opt/clintosaurous/core` directory.
 
+See `apache-setup.sh` documentation for more details on the installation
+process. Run `apache-setup.sh` with `-h` or `--help` for CLI options.
+
+    sudo /opt/clintosaurous/core/apache-setup.sh
+
 NOTE: If there are firewalls in use, ensure port 443 is allowed to the server.
 
 Default SSL key and certificate are installed. If you plan to use an alternate
-SSL key and certificate, you can specify the path with CLI options.
-
-See `apache-setup.sh` documentation for more details on the installation
-process. Run `apache-setup.sh` with `-h` or `--help` for CLI options.
+SSL key and certificate, you can specify the path with CLI options or replace
+the default files with your keys.
