@@ -307,7 +307,7 @@ if [ ! -e $PASSFILE ]; then
             echo "set using a CLI argument at the command line." >&2
             echo >&2
             echo "Commands:" >&2
-            echo "    sudo htpasswd -bc /etc/apache2/htpasswd $CLINTUSER <passwd>" >&2
+            echo "    sudo htpasswd -bc /etc/apache2/htpasswd $CLINTUSER <passwd> && history -c" >&2
             echo "    sudo chmod 660 $PASSFILE" >&2
             echo "    sudo chown $CLINTUSER:$CLINTGROUP $PASSFILE" >&2
             echo
