@@ -152,7 +152,7 @@ done
 if [ $IGNOREOS -ne 0 ]; then check_valid_os ; fi
 check_login_user root
 
-# Header.
+
 log_msg "#### Clintosaurous Apache initial setup starting ####"
 
 
@@ -381,6 +381,12 @@ if [ $APACHERELOAD -ne 0 ]; then
         exit 1
     fi
 fi
+
+
+# Reset directory ownership to be able to clone repository.
+log_msg "Setting directory ownership to $CLINTUSER:$CLINTGROUP"
+chown -R $CLINTUSER:$CLINTGROUP $USERHOME $ETCDIR $LOGDIR
+chmod -R g+w,o= $ETCDIR
 
 
 log_msg "#### Clintosaurous Apache setup complete ####"
