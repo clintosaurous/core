@@ -92,13 +92,13 @@ sudo `basename $0` [-h | --help] \\
     -U | --username
         Username to use for the Clintosaurous tools. This must match on all
         servers that run the Clintosaurous environment. It is recommended to
-        use the default username. Default: clintosaurous
+        use the default username. Default: $CLINTUSER
     -u | --uid
         Set the user ID (UID) for user Clintosaurous for if user needs to be
-        created. Default: Set by adduser command.
+        created.
     -p | --group
         User's group name. It is recommended use the default.
-        Default: clintosaurous
+        Default: $CLINTGROUP
     -g | --gid
         Set the user group ID (GID) for user Clintosaurous for if user needs
         to be created. Default: Set by addgroup command.
@@ -109,9 +109,9 @@ sudo `basename $0` [-h | --help] \\
         Set the GitHub repository branch to use. Default: main
 
 Paths are statically set. Below are the base directories created:
-    /opt/clintosaurous: Clintosaurous user and tools home directory.
-    /etc/clintosaurous: Configuration file storage.
-    /var/log/clintosaurous: Logs directory.
+    $USERHOME: Clintosaurous user and tools home directory.
+    $ETCDIR: Configuration file storage.
+    $LOGDIR: Logs directory.
 "
     exit
 }
