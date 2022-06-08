@@ -3,11 +3,11 @@
 # Commonly used functions and variables in Clintosaurous shell scripts.
 #
 # Version: 1.0.0
-# Last Updated: 2022-05-30
+# Last Updated: 2022-06-08
 #
 # Change Log:
 #   v1.0.0:
-#       Initial creation. (2022-05-30)
+#       Initial creation. (2022-06-08)
 #
 # Note: See repository commit logs for change details.
 
@@ -20,6 +20,7 @@ export CLINTLOG=/var/log/clintosaurous
 export _STARTDATETIME=`date +%s`
 
 
+# Check if logged in as supplied username.
 check_login_user () {
     if [ -z "$1" ]; then
         echo "You must supply a username to check_login_user()" >&2
@@ -31,6 +32,7 @@ check_login_user () {
 }   # End function check_root
 
 
+# Validate running on a support OS.
 check_valid_os () {
     ERRMSG="Running unsupported OS or OS version. Only Ubuntu 20.04 or 22.04"
     ERRMSG="$ERRMSG are supported. The tools may run on other OSes, but they"
