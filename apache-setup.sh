@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Performs the initial Apache installation and setup of the Clintosaurous
 # tools.
@@ -42,6 +42,7 @@ echo "#### Setting initial environment ####"
 APTUPDATE=1
 IGNOREOS=0
 REPOUPDATE=1
+
 USERHOME=/opt/clintosaurous
 COREHOME=$USERHOME/core
 ETCDIR=/etc/clintosaurous
@@ -53,7 +54,7 @@ CERTFILE=/etc/apache2/default-www.pem
 
 
 # Read default username and password from core configuration file.
-echo "Parsing core configuration file for default username and password"
+log_msg "Parsing core configuration file for default username and password"
 CONFUSER=`python3 -c "
 import yaml
 with open('$CORECONF', newline='') as y:
@@ -148,7 +149,7 @@ done
 
 
 # Verify running on supported OS and running as root.
-if [ $IGNOREOS -ne 0]; then check_valid_os ; fi
+if [ $IGNOREOS -ne 0 ]; then check_valid_os ; fi
 check_login_user root
 
 # Header.
@@ -156,8 +157,9 @@ log_msg "#### Clintosaurous Apache initial setup starting ####"
 
 
 # Install required packages.
-log_msg "Installing required aptitude packages"
 if [ $APTUPDATE -ne 0 ]; then
+    log_msg "Installing required aptitude packages"
+
     log_msg "Updating system"
     apt update -q && apt upgrade -q -y 2>&1 | log_stdin
     if [ $? -ne 0 ]; then
@@ -246,48 +248,94 @@ if [ ! -e $A2CONF ]; then
     fi
 
     log_msg "Adding default configuration file"
-    cp $COREHOME/lib/defaults/apache2.conf $A2CONF 2>& | log_stdin
+    cp $COREHOME/lib/defaults/apache2.conf $A2CONF 2>&1| log_stdin
 
     if [ -e $CERTFILE ]; then
         log_msg "Certificate exists"
     else
         log_msg "Adding default web certificate and key"
         cp /opt/clintosaurous/core/lib/defaults/default-www.key $KEYFILE \
-            2>& | log_stdin
+            2>&1| log_stdin
         cp /opt/clintosaurous/core/lib/defaults/default-www.pem $CERTFILE \
-            2>& | log_stdin
-        chmod 600 $KEYFILE 2>& | log_stdin
-        chown $CLINTUSER:$CLINTGROUP $KEYFILE $CERTFILE 2>& | log_stdin
+            2>&1| log_stdin
+        chmod 600 $KEYFILE 2>&1| log_stdin
+        chown $CLINTUSER:$CLINTGROUP $KEYFILE $CERTFILE 2>&1| log_stdin
     fi
 
     log_msg "Setting Apache run time user"
     sed -Ei "s/APACHE_RUN_USER=.+/APACHE_RUN_USER=$CLINTUSER/" \
-        /etc/apache2/envvars 2>& | log_stdin
+        /etc/apache2/envvars 2>&1| log_stdin
     log_msg "Setting Apache run time group"
     sed -Ei "s/APACHE_RUN_GROUP=.+/APACHE_RUN_GROUP=$CLINTGROUP/" \
-        /etc/apache2/envvars 2>& | log_stdin
+        /etc/apache2/envvars 2>&1| log_stdin
     log_msg "Setting Apache server name"
-    sed -Ei "s/<<<server-name>>>/$SERVERNAME/" $A2CONF 2>& | log_stdin
+    sed -Ei "s/<<<server-name>>>/$SERVERNAME/" $A2CONF 2>&1| log_stdin
     log_msg "Setting Apache server admin"
-    sed -Ei "s/<<<server-admin>>>/$SERVERADMIN/" $A2CONF 2>& | log_stdin
+    sed -Ei "s/<<<server-admin>>>/$SERVERADMIN/" $A2CONF 2>&1| log_stdin
     log_msg "Setting Apache SSL key file"
-    sed -Ei "s|<<<key-file>>>|$KEYFILE|" $A2CONF 2>& | log_stdin
+    sed -Ei "s|<<<key-file>>>|$KEYFILE|" $A2CONF 2>&1| log_stdin
     log_msg "Setting Apache SSL certificate file"
-    sed -Ei "s|<<<cert-file>>>|$CERTFILE|" $A2CONF 2>& | log_stdin
+    sed -Ei "s|<<<cert-file>>>|$CERTFILE|" $A2CONF 2>&1| log_stdin
 
     if [ ! -e /etc/apache2/sites-enabled/clintosaurous.conf ]; then
         log_msg "Enabling Clintosaurous configuration"
-        a2ensite clintosaurous 2>& | log_stdin
+        a2ensite clintosaurous 2>&1| log_stdin
         if [ $? -ne 0 ]; then
             log_msg "Error enabling Apache clintosaurous site" >&2
             exit 1
         fi
     fi
 
-    PASSFILE=/etc/apache2/htpasswd
-    if [ ! -e $PASSFILE ]; then
-        log_msg "Setting up Clintosaurous user for web access"
-        htpasswd -c $PASSFILE $CLINTUSER 2>& | log_stdin
+fi
+
+PASSFILE=/etc/apache2/htpasswd
+if [ ! -e $PASSFILE ]; then
+    log_msg "Setting up $CLINTUSER user for web access"
+
+    # Password would not set properly from a script on Ubuntu 20.04. Must be
+    # manually created from the command line with the password as a parameter.
+    BADOS=0
+    if [ $IGNOREOS -eq 0 ]; then
+        . /etc/lsb-release
+        if [ "$DISTRIB_RELEASE" = "20.04" ]; then
+            echo
+            echo -n "Apache 2 user must be created manually! As of " >&2
+            echo -n "2022-06-08, there is a bug in Apache htpasswd that " >&2
+            echo -n "will not allow scripted user creation. The password " >&2
+            echo -n "would not be set correctly and the user cannot " >&2
+            echo -n "login to the web site. The password must also be " >&2
+            echo "set using a CLI argument at the command line." >&2
+            echo >&2
+            echo "Commands:" >&2
+            echo "    htpasswd -bc /etc/apache2/htpasswd $CLINTUSER <passwd>"\
+                >&2
+            echo "    chmod 660 $PASSFILE" >&2
+            echo "    chown $CLINTUSER:$CLINTGROUP $PASSFILE" >&2
+            echo
+            BADOS=1
+        fi
+    fi
+
+    if [ $BADOS -eq 0 ]; then
+        echo
+        echo "Creating $CLINTUSER Apache user"
+        echo "WARNING: Do not use Linux special characters in the password!"
+        echo
+
+        CLINTPASSWD=0
+        PASSWDCONFIRM=1
+        while [ "$CLINTPASSWD" != "$PASSWDCONFIRM" ]; do
+            read -s -p "Enter $CLINTUSER web password: " CLINTPASSWD
+            echo
+            read -s -p "Re-enter $CLINTUSER web password: " PASSWDCONFIRM
+            echo
+            if [ "$CLINTPASSWD" != "$PASSWDCONFIRM" ]; then
+                echo
+                echo "Passwords do not match, try again."
+            fi
+        done
+
+        echo "$CLINTPASSWD" | htpasswd -ci $PASSFILE $CLINTUSER
         if [ $? -ne 0 ]; then
             log_msg "Error creating Apache user $CLINTUSER" >&2
             exit 1
@@ -297,14 +345,15 @@ if [ ! -e $A2CONF ]; then
     fi
 fi
 
+
 # Validate default index configuration file exits.
 if [ -e $ETCDIR/www-index.yaml ]; then
     log_msg "Default index page configuration exists"
 else
     log_msg "Adding index page default configuration"
-    cp $COREHOME/lib/defaults/www-index.yaml $ETCDIR/ 2>& | log_stdin
-    chown -R $CLINTUSER:$CLINTGROUP $ETCDIR/ 2>& | log_stdin
-    chmod g+w,o= $ETCDIR/www-index.yaml 2>& | log_stdin
+    cp $COREHOME/lib/defaults/www-index.yaml $ETCDIR/ 2>&1| log_stdin
+    chown -R $CLINTUSER:$CLINTGROUP $ETCDIR/ 2>&1| log_stdin
+    chmod g+w,o= $ETCDIR/www-index.yaml 2>&1| log_stdin
 fi
 
 
