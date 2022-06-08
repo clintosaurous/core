@@ -1,14 +1,14 @@
-#!/bin/sh
+#!/bin/bash
 
 # Performs the initial installation and setup of the Clintosaurous core
 # environment.
 #
 # Version: 1.0.0
-# Last Updated: 2022-06-07
+# Last Updated: 2022-06-08
 #
 # Change Log:
 #   v1.0.0:
-#       Initial creation. (2022-06-07)
+#       Initial creation. (2022-06-08)
 #
 # Note: See repository commit logs for change details.
 #
@@ -57,6 +57,9 @@ BASHINC=$COREHOME/lib/bash/bashrc
 PYLIB=$COREHOME/lib/python
 ETCDIR=/etc/clintosaurous
 LOGDIR=/var/log/clintosaurous
+
+CLINTUID=420
+CLINTGID=420
 
 
 # Help/usage information.
@@ -129,12 +132,12 @@ do
         "--no-repo-update") REPOUPDATE=0 ;;
         "-U") shift ; CLINTUSER=$1 ;;
         "--user") shift; CLINTUSER=$1 ;;
-        "-u") shift ; USERUID=$1 ; CLIUID="--uid $1";;
-        "--uid") shift ; USERUID=$1 ; CLIUID="--uid $1" ;;
+        "-u") shift ; CLINTUID=$1 ;;
+        "--uid") shift ; CLINTUID=$1 ;;
         "-p") shift ; CLINTGROUP=$1 ;;
         "--group") shift ; CLINTGROUP=$1 ;;
-        "-g") shift ; USERGID=$1 ; CLIGID="--gid $1" ;;
-        "--gid") shift ; USERGID=$1 ; CLIGID="--gid $1" ;;
+        "-g") shift ; CLINTGID=$1 ;;
+        "--gid") shift ; CLINTGID=$1 ;;
         "-I") IGNOREOS=1 ;;
         "--ignore-os") IGNOREOS=1 ;;
         "-b") shift ; BRANCH=$1 ;;
@@ -237,25 +240,51 @@ done
 # Setup user and group.
 if [ $CREATEUSER -ne 0 ]; then
     echo "#### Setting up $CLINTUSER user and group ####"
-    if [ -n "`id $CLINTUSER 2>/dev/null | grep 'uid='`" ]; then
-        echo "User $CLINTUSER already exits"
+
+    CURGID=`grep "$CLINTGROUP:" /etc/group | sed -re 's/^.+:([0-9]+):$/\1/'`
+    if [ -n "$CURGID" ]; then
+        echo "Grep $CLINTGROUP exists"
+        CLINTGID=$CURGID
     else
         echo "Creating group $CLINTGROUP"
-        addgroup $CLIGID $CLINTGROUP
+        addgroup --gid $CLINTGID $CLINTGROUP
         if [ $? -ne 0 ]; then
             echo "Error adding group $CLINTGROUP" >&2
             exit 1
         fi
+    fi
 
-        echo "Creating $CLINTUSER user"
-        USERGID=`grep "$CLINTUSER:" /etc/group | sed -re 's/^.+:([0-9]+):$/\1/'`
-        CLIGID="--gid $USERGID"
-        adduser --shell /bin/bash --home $USERHOME --no-create-home \
-            $CLIGID $CLIUID $CLINTUSER
+    if [ -n "`id $CLINTUSER 2>/dev/null | grep 'uid='`" ]; then
+        echo "User $CLINTUSER already exits"
+    else
+        echo
+        echo "Creating $CLINTUSER system user"
+        echo
+
+        CLINTGID=`grep "$CLINTUSER:" /etc/group | sed -re 's/^.+:([0-9]+):$/\1/'`
+        CLINTPASSWD=0
+        PASSWDCONFIRM=1
+        while [ "$CLINTPASSWD" != "$PASSWDCONFIRM" ]; do
+            read -s -p "Enter $CLINTUSER password: " CLINTPASSWD
+            echo
+            read -s -p "Re-enter $CLINTUSER password: " PASSWDCONFIRM
+            echo
+            if [ "$CLINTPASSWD" != "$PASSWDCONFIRM" ]; then
+                echo
+                echo "Passwords do not match, try again"
+            fi
+        done
+
+        USERCONF=/tmp/clintosaurous.user.conf
+        echo "$CLINTUSER:$CLINTPASSWD:$CLINTUID:$CLINTGID:Clintosaurous Tools Service Account:/opt/clintosaurous:/bin/bash" \
+            > $USERCONF
+        newusers $USERCONF
         if [ $? -ne 0 ]; then
+            rm -f $USERCONF
             echo "Error adding user $CLINTUSER" >&2
             exit 1
         fi
+        rm -f $USERCONF
     fi
 else
     echo "#### Skipping user creation from CLI option ####"
