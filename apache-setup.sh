@@ -4,11 +4,11 @@
 # tools.
 #
 # Version: 1.0.0
-# Last Updated: 2022-06-07
+# Last Updated: 2022-06-08
 #
 # Change Log:
 #   v1.0.0:
-#       Initial creation. (2022-06-07)
+#       Initial creation. (2022-06-08)
 #
 # Note: See repository commit logs for change details.
 #
@@ -307,10 +307,9 @@ if [ ! -e $PASSFILE ]; then
             echo "set using a CLI argument at the command line." >&2
             echo >&2
             echo "Commands:" >&2
-            echo "    htpasswd -bc /etc/apache2/htpasswd $CLINTUSER <passwd>"\
-                >&2
-            echo "    chmod 660 $PASSFILE" >&2
-            echo "    chown $CLINTUSER:$CLINTGROUP $PASSFILE" >&2
+            echo "    sudo htpasswd -bc /etc/apache2/htpasswd $CLINTUSER <passwd>" >&2
+            echo "    sudo chmod 660 $PASSFILE" >&2
+            echo "    sudo chown $CLINTUSER:$CLINTGROUP $PASSFILE" >&2
             echo
             BADOS=1
         fi
