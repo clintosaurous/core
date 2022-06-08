@@ -261,7 +261,7 @@ if [ $CREATEUSER -ne 0 ]; then
         echo "Creating $CLINTUSER system user"
         echo
 
-        CLINTGID=`grep "$CLINTUSER:" /etc/group | sed -re 's/^.+:([0-9]+):$/\1/'`
+        CLINTGID=`grep "$CLINTGROUP:" /etc/group | sed -re 's/^.+:([0-9]+):$/\1/'`
         CLINTPASSWD=0
         PASSWDCONFIRM=1
         while [ "$CLINTPASSWD" != "$PASSWDCONFIRM" ]; do
@@ -370,7 +370,7 @@ for FILE in bashrc my.cnf profile
 do
     DEFFILE=$COREHOME/lib/defaults/$FILE
     UFILE=$USERHOME/.$FILE
-    if [ !-e $UFILE ]; then
+    if [ ! -e $UFILE ]; then
         echo "Copying $DEFFILE to $UFILE"
         cp $DEFFILE $UFILE
         if [ $? -ne 0 ]; then
@@ -408,9 +408,9 @@ if [ -e "$USERHOME/.ssh/id_rsa" ]; then
 else
     echo "Generating SSH keys"
     # Must be ran as Clintosaurous user.
-    su - -c "ssh-keygen -b 2024 -N '' -f $USERHOME/.ssh/id_rsa" clintosaurous
+    su - -c "ssh-keygen -b 2024 -N '' -f $USERHOME/.ssh/id_rsa" $CLINTUSER
     if [ $? -ne 0 ]; then
-        echo "Error generating clintosaurous SSH keys" >&2
+        echo "Error generating $CLINTUSER SSH keys" >&2
         exit 1
     fi
 fi
@@ -423,7 +423,7 @@ if [ -e "$VENVDIR" ]; then
 else
     echo "Creating Python virtual environment to $VENVDIR"
     # Must be created as Clintosaurous user.
-    su - -c "python3 -m venv $VENVDIR" clintosaurous
+    su - -c "python3 -m venv $VENVDIR" $CLINTUSER
     if [ $? -ne 0 ]; then
         echo "Error creating Python VENV" >&2
         exit 1
@@ -433,7 +433,7 @@ fi
 echo "Installing required modules"
 # Must be ran as Clintosaurous user.
 su - -c ". $VENVDIR/bin/activate && python3 -m pip install cryptography pymysql pyyaml" \
-    clintosaurous
+    $CLINTUSER
 if [ $? -ne 0 ]; then
     echo "Error installing Python modules" >&2
     exit 1
