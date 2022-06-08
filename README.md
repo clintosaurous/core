@@ -20,7 +20,8 @@ It is built on shell, bash, and Python scripts.
 
 -   Physical or virtual. Virtual is recommended. Resource utilization is low.
 -   2 x Processors
--   4GB RAM (8GB RAM if running on Ubuntu desktop version.)
+-   4GB RAM (8GB RAM if running on Ubuntu desktop version or installing
+    additional tools.)
 -   16GB Hard Drive
 
 ### Operating System
@@ -52,7 +53,7 @@ Run `install.sh` with `-h` or `--help` for CLI options.
 
 -   Direct download and run the `install.sh` script.
 
-        curl -s https://raw.githubusercontent.com/clintosaurous/core/main/install.sh | sudo /bin/sh
+        curl -s https://raw.githubusercontent.com/clintosaurous/core/main/install.sh | sudo /bin/bash
 
 -   Download `install.sh` and run it manually. This is useful if you are not
     running the default configuration. You can specify alternate information
