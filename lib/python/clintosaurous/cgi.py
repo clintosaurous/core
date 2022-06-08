@@ -6,14 +6,21 @@ enviroment.
 
     import clintosaurous.cgi
     cgi = clintosaurous.cgi.cgi(opt, ...)
+    print(cgi.start_page())
+    print('<p>Hello World!</p>')
+    print(cgi.end_page())
+
+It support starting and ending a page, forms, and text tables.
+
+See /opt/clintosaurous/www/styles/standard.css for available classes.
 """
 
 # Version: 1.0.0
-# Last Updated: 2022-05-31
+# Last Updated: 2022-06-07
 #
 # Change Log:
 #   v1.0.0:
-#       Initial creation. (2022-05-31)
+#       Initial creation. (2022-06-07)
 #
 # Note: See repository commit logs for change details.
 
@@ -28,6 +35,7 @@ import re
 import random
 
 
+# Base class for the module.
 class cgi:
 
     """
@@ -77,6 +85,7 @@ class cgi:
         last_update=None, copyright=None
     ):
 
+        # Save init call arguments.
         self.title = title
         self.contact = contact
         self.header = header
@@ -88,6 +97,7 @@ class cgi:
         self.last_update = last_update
         self.copyright = copyright
 
+        # Build full URL. Used for forms.
         http_script_name = os.environ.get("SCRIPT_NAME")
         if http_script_name is None:
             http_script_name = '/'
@@ -97,9 +107,13 @@ class cgi:
             http_script_name
         )
 
+        # Parse the CGI environment.
         self.env = cgi_mod.parse()
+        # Parse URL parameters.
         self.form_values = cgi_mod.FieldStorage()
 
+        # Check if requesting device is an Android device, and update the CSS
+        # file to Android specific file.
         usr = os.getenv("HTTP_USER_AGENT")
         if usr is not None and re.search(r'Android', usr):
             self.css = css_android
@@ -111,11 +125,12 @@ class cgi:
 
         """
         End an HTML page. Version, last updated, etc. uses the values supplied
-        in clintosaurous.cgi.cgi(params).
+        in clintosaurous.cgi.cgi(opts).
 
             print(cgi.end_page())
         """
 
+        # Build page end summary.
         return_txt = f"""
 </div>
 
@@ -124,28 +139,37 @@ class cgi:
 <p class="footer">
 """
 
+        # Add version and last updated information to output if supplied. Last
+        # updated is only output if a version is supplied.
         if self.version is not None:
             return_txt += f'Version {self.version}'
 
+            # Add last updated to output if supplied. 
             if self.last_update:
                 return_txt += f', Updated {self.last_update}<br>\n'
             else:
                 return_txt += '<br>\n'
 
+        # Add the script start time and run time to output.
         return_txt += '{}, {}'.format(
             datetime.timestamp(datetime.start_time),
             datetime.run_time()
         )
 
+        # Add username to output.
         if os.getenv("REMOTE_USER"):
             user = os.getenv("REMOTE_USER").split("@", 1)[0]
             return_txt += f', Logged in as: {user}'
 
+        # Add copyright notice to output if copyright year supplied.
         if self.copyright:
-            return_txt += f"""<br>
-Copyright {self.copyright} by Clinton R McGraw. All Rights Reserved.
-"""
+            return_txt += (
+                '<br>\n' +
+                f'Copyright {self.copyright} by Clinton R McGraw. ' +
+                ' All Rights Reserved.'
+            )
 
+        # Close the HTML.
         return_txt += """
 </p>
 </div>
@@ -262,6 +286,12 @@ Copyright {self.copyright} by Clinton R McGraw. All Rights Reserved.
 
             title, type, and name are required values.
 
+            The fields have an "override" option to override the received
+            value. By default, if the form has already been submitted, the
+            value from that submittion is used as the default value. This can
+            overriden with the "override" option. The functions will use the
+            value defined in the "value" option, not the "default".
+
             fields = [
 
                 {
@@ -274,7 +304,7 @@ Copyright {self.copyright} by Clinton R McGraw. All Rights Reserved.
                 },
 
                 {
-                    "type": "dropdown/list",    # Difference is in the CSS
+                    "type": "dropdown|list",    # Difference is in the CSS
                                                 # class the list is assigned.
                     "title": None,      # Display text next to the dropdown.
                     "name":             # HTML tag name.
@@ -289,7 +319,7 @@ Copyright {self.copyright} by Clinton R McGraw. All Rights Reserved.
                 },
 
                 {
-                    "type": "text/password",    # password ignores previous
+                    "type": "text|password",    # password ignores previous
                                                 # submit value.
                     "title": None,      # Display text next to the text field.
                     "name": None,       # HTML tag name.
@@ -330,72 +360,77 @@ Copyright {self.copyright} by Clinton R McGraw. All Rights Reserved.
 
                 hidden = [
                     {
-                        "name":             # HTML tag name.
-                        "value": None,      # Default value for hidden field.
-                        "override": False   # Override previous submit default
-                                            # value.
+                        "name":         # HTML tag name.
+                        "value": None   # Default value for hidden field.
                     }
                 ]
         """
 
+        # Verify we were provided basic form data. Either fields or buttons
+        # are required.
         if fields is None and buttons is None:
             raise ValueError('fields or buttons values are required')
 
+        # If no action supplied, default to self.
         if action is None:
             action = self.url
 
+        # Generate random form name if no form name is supplied.
         if name is None:
             name = f'form_{random.randrange(0, 100000)}'
 
         method = method.lower()
-
         return_txt = '<div class="input_form">'
 
+        # If fields were supplied, they will go in a table. Start the table.
+        # If only buttons are supplied, we do not need a table.
         if fields is not None:
             return_txt += '<table class="input_form">\n'
 
+        # Start the web form.
         return_txt += \
             f'<form action="{action}" name="{name}" method="{method}">\n'
 
-        if hidden is not None:
-            return_txt += self._form_hidden(hidden) + '\n'
+        # Process fields.
+        return_txt += self._form_hidden(hidden) + '\n'
+        return_txt += self._form_fields(fields) + '\n'
 
-        if fields is not None:
-            return_txt += self._form_fields(fields) + '\n'
-
+        # Process form buttons.
         if buttons is not None:
+            # If there are form fields, start table row.
             if fields is not None:
-                field_data = True
-            else:
-                field_data = False
-            return_txt += self._form_buttons(buttons, field_data) + '\n'
+                return_txt += (
+                    '<tr class="form_button">' +
+                    '<td class="form_buttons" colspan="2">\n'
+                )
+
+            return_txt += self._form_buttons(buttons) + '\n'
+
+            # If fields exist, close the HTML table row.
+            if fields is not None:
+                return_txt += "</td></tr>\n"
 
         return_txt += '</form>'
 
+        # If fields, close out the table.
         if fields is not None:
             return_txt += '</table>\n'
 
         return_txt += '</div>'
 
-        return_txt = self.text_box(return_txt, title=title, comment=comment)
-
-        return return_txt
+        # Generate a text box with the form information.
+        return self.text_box(return_txt, title=title, comment=comment)
 
     # End: form()
 
 
-    def _form_buttons(self, buttons, fields=True):
+    def _form_buttons(self, buttons):
 
         # Internal function for building form button fields.
 
         return_txt = ''
 
-        if fields:
-            return_txt += (
-                '<tr class="form_button">' +
-                '<td class="form_buttons" colspan="2">\n'
-            )
-
+        # Build HTML for the form buttons.
         for button in buttons:
             try:
                 button_type = button["button_type"]
@@ -406,84 +441,87 @@ Copyright {self.copyright} by Clinton R McGraw. All Rights Reserved.
                 f'value="{button["value"]}" />\n'
             )
 
-        if fields:
-            return_txt += "</td></tr>\n"
-
         return return_txt
 
     # End: _form_buttons()
+
+
+    def _form_check_override(self, field):
+
+        # Check if "override" was specified, or default to False.
+        try:
+            override = field["override"]
+        except KeyError:
+            override = False
+
+        # If overriding form value, set to supplied "value", or default to ''.
+        if override:
+            try:
+                return field["value"], True
+            except KeyError:
+                return '', True
+
+        # If not overriding, check if a form submition value exists. If so,
+        # default to that, or default to ''. 
+        else:
+            value = self.form_values.getvalue(field["name"])
+            if value is None:
+                try:
+                    return field["default"], False
+                except KeyError:
+                    return '', False
+            return value, False
+
+    # End: _form_check_override()
 
 
     def _form_fields(self, fields):
 
         # Internal function for building out form fields.
 
+        if fields is None:
+            return ''
+
         return_txt = ''
 
+        # Loop through fields supplied.
         for field in fields:
-
+            # Start new HTML table row for each field.
             return_txt += f"""
                 <tr class="field_row">
                 <td class="form_field_title">{field["title"]}:</td>
                 <td class="field_input">
             """
 
-            try:
-                override = field["override"]
-            except KeyError:
-                override = False
+            # Check for value override.
+            value, override = self._form_check_override(field)
 
             # HTML text or password field.
             if field["type"] == 'text' or field["type"] == 'password':
-                return_txt += \
-                    f'<input type="{field["type"]}" name="{field["name"]}"'
+                return_txt += (
+                    f'<input type="{field["type"]}" ' +
+                    f'name="{field["name"]}" value="{value}"'
+                )
+
+                # Add field max length if supplied.
                 try:
                     return_txt += f' maxlength="{field["maxlength"]}"'
                 except KeyError:
                     True
 
-                if override:
-                    try:
-                        value = field["value"]
-                    except KeyError:
-                        value = None
-                else:
-                    value = self.form_values.getvalue(field["name"])
-                    if value is None:
-                        try:
-                            value = field["default"]
-                        except KeyError:
-                            value = None
-
-                if value is not None:
-                    return_txt += f' value="{value}"'
-
                 return_txt += ' />\n'
 
             # HTML text area field.
             elif field["type"] == 'textarea':
+                # Set default columns and rows for the text area.
                 try:
                     field["cols"]
                 except KeyError:
                     field["cols"] = 40
-
                 try:
                     field["rows"]
                 except KeyError:
                     field["rows"] = 5
-
-                if override:
-                    try:
-                        value = field["value"]
-                    except KeyError:
-                        value = ''
-                else:
-                    value = self.form_values.getvalue(field["name"])
-                    if value is None:
-                        try:
-                            value = field["default"]
-                        except KeyError:
-                            value = ''
 
                 return_txt += (
                     f'<textarea name="{field["name"]}" ' +
@@ -498,21 +536,8 @@ Copyright {self.copyright} by Clinton R McGraw. All Rights Reserved.
                     labels = field["labels"]
                 except KeyError:
                     labels = {}
-                    for value in values:
-                        labels[value] = value
-
-                if override:
-                    try:
-                        default = field["default"]
-                    except KeyError:
-                        default = ''
-                else:
-                    default = self.form_values.getvalue(field["name"])
-                    if default is None:
-                        try:
-                            default = field["default"]
-                        except KeyError:
-                            default = ''
+                    for l_value in values:
+                        labels[l_value] = l_value
 
                 if field["type"] == 'dropdown':
                     field_class = "field_input"
@@ -522,18 +547,20 @@ Copyright {self.copyright} by Clinton R McGraw. All Rights Reserved.
                 return_txt += \
                     f'<select name="{field["name"]}" class="{field_class}">'
 
-                for value in values:
+                for f_value in values:
                     if not isinstance(value, str):
                         value = str(value)
 
                     return_txt += f'<option value="{value}"'
-                    if value == default:
+                    if f_value == value:
                         return_txt += ' selected="selected"'
                     return_txt += f'>{labels[value]}</option>\n'
 
                 return_txt += '</select>\n'
 
+            # HTML checkbox.
             elif field["type"] == 'checkbox':
+                # Check for value override.
                 if override:
                     try:
                         form_checked = field["checked"]
@@ -545,9 +572,7 @@ Copyright {self.copyright} by Clinton R McGraw. All Rights Reserved.
                         else:
                             checked = ''
                 else:
-                    form_value = self.form_values.getvalue(field["name"])
-
-                    if form_value is None:
+                    if value != '':
                         try:
                             form_checked = field["checked"]
                         except KeyError:
@@ -558,49 +583,34 @@ Copyright {self.copyright} by Clinton R McGraw. All Rights Reserved.
                             else:
                                 checked = ''
                     else:
-                        if form_value:
-                            checked = " checked"
-                        else:
-                            checked = ''
+                        checked = " checked"
 
                 return_txt += (
                     f'<label><input type="checkbox" name="{field["name"]}" ' +
-                    f'value="{field["value"]}" ' +
+                    f'value="{value}" ' +
                     f'class="field_input"{checked} /></label>\n'
                 )
 
+            # HTML radio button.
             elif field["type"] == 'radio':
-                if override:
-                    try:
-                        default = field["default"]
-                    except KeyError:
-                        default = ''
-                else:
-                    default = self.form_values.getvalue(field["name"])
-                    if default is None:
-                        try:
-                            default = field["default"]
-                        except KeyError:
-                            default = ''
-
                 buttons = []
                 try:
                     labels = field["labels"]
                 except KeyError:
                     labels = {}
-                    for value in field["values"]:
-                        labels[value] = value
+                    for l_value in field["values"]:
+                        labels[l_value] = l_value
 
-                for value in field["values"]:
-                    if value == default:
+                for f_value in field["values"]:
+                    if f_value == value:
                         checked = ' checked'
                     else:
                         checked = ''
 
                     buttons.append(
                         f'<input type="radio"{checked} ' +
-                        f'name="{field["name"]}" value="{value}">' +
-                        f'{labels[value]}</input>\n'
+                        f'name="{field["name"]}" value="{f_value}">' +
+                        f'{labels[f_value]}</input>\n'
                     )
 
                 return_txt += '<div>\n' + '<br>\n'.join(buttons) + '</div>\n'
@@ -622,18 +632,8 @@ Copyright {self.copyright} by Clinton R McGraw. All Rights Reserved.
         return_txt = ''
 
         for field in fields:
-            try:
-                override = field["override"]
-            except KeyError:
-                override = False
-
-            if override:
-                value = field["value"]
-            else:
-                value = self.form_values.getvalue(field["name"])
-                if value is None:
-                    value = field["value"]
-
+            # Check for value override.
+            value, override = self._form_check_override(field)
             return_txt += (
                 f'<input type="hidden" name="{field["name"]}" ' +
                 f'value="{value}" />\n'
@@ -710,10 +710,15 @@ Copyright {self.copyright} by Clinton R McGraw. All Rights Reserved.
                 {
                     "title": None,
                     "link": None,
-                    "links": None
+                    "links": [
+                        {
+                            "title": None,
+                            "link": None,
+                            "links": None
+                        }
+                    ]
                 }
             ]
-
 
             title
                 Required title to be displayed for the menu item.
@@ -749,6 +754,7 @@ Copyright {self.copyright} by Clinton R McGraw. All Rights Reserved.
 
         cgitb.enable()
 
+        # Start HTML text page and open <head>.
         return_txt = f"""Content-Type: text/html
 
 <!DOCTYPE html
@@ -758,9 +764,13 @@ Copyright {self.copyright} by Clinton R McGraw. All Rights Reserved.
 <head>
     <title>{self.title}</title>
 """
+
+        # Add page contact if supplied.
         if self.contact is not None:
             return_text += \
                 f'    <link rev="made" href="mailto:{self.contact}" />'
+
+        # Finish <head> and open <body>
         return_txt += f"""
     <link href="{self.icon}" rel="icon" />
     <link rel="stylesheet" type="text/css" href="{self.css}" />
@@ -771,6 +781,7 @@ Copyright {self.copyright} by Clinton R McGraw. All Rights Reserved.
 
 """
 
+        # Check if the page header should be displayed. Add page header.
         header = self.form_values.getvalue("header")
         if header is None or (header != "0" and header.upper() != "FALSE"):
             return_txt += f"""
@@ -801,9 +812,11 @@ Copyright {self.copyright} by Clinton R McGraw. All Rights Reserved.
 
         Arguments:
 
-            -   rows: List of lists with possible headings and row values.
+            -   rows
+                    List of lists with possible headings and row values.
 
-            -   headings: Boolean if the first row in rows is a headings row.
+            -   headings
+                    Boolean if the first row in rows is a headings row.
         """
 
         return_txt = """
@@ -836,17 +849,32 @@ Copyright {self.copyright} by Clinton R McGraw. All Rights Reserved.
     # End: table()
 
 
-    def table_split(self, rows, headings=True, columns=3):
+    def table_split(self, rows, headings=True, sections=3):
 
         """
-        Splits a table into multiple tables.
+        Splits a table into multiple tables. Like cgi.table(), this will split
+        the data into X number of columns instead of all one column. It will
+        replicate the headings to each split block if headings are supplied.
 
-            print(table_split(self, title))
+            print(table_split(rows))
+
+        Arguments:
+
+            -   rows
+                    List of lists with possible headings and row values.
+
+            -   headings
+                    Boolean if the first row in rows is a headings row.
+                    Default: True
+
+            -   sections
+                    How many sectiosn to split the data in to.
+                    Default: 3
         """
 
         total_rows = int(len(rows))
-        rows_per_column = int(total_rows / columns)
-        if total_rows % columns != 0:
+        rows_per_column = int(total_rows / sections)
+        if total_rows % sections != 0:
             rows_per_column += 1
 
         if headings:
@@ -854,7 +882,7 @@ Copyright {self.copyright} by Clinton R McGraw. All Rights Reserved.
             del row[0]
 
         table = []
-        table_rows = [[] for i in range(columns)]
+        table_rows = [[] for i in range(sections)]
         out_tables = []
         cur_table = 0
         for row in rows:
@@ -887,6 +915,10 @@ Copyright {self.copyright} by Clinton R McGraw. All Rights Reserved.
 
             html
                 HTML to be put in the box contents.
+
+            comment
+                HTML formated string to be added between the title and the
+                text box.
         """
 
         return_txt = '<div class="text_box">\n'
