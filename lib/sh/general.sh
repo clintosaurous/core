@@ -13,11 +13,39 @@
 
 
 # Global variables.
+export CLINTETC=/etc/clintosaurous
+export CLINTCONF=$CLINTETC/clintosaurous.yaml
 export CLINTHOME=/opt/clintosaurous
 export CLINTCORE=$CLINTHOME/core
-export CLINTETC=/etc/clintosaurous
 export CLINTLOG=/var/log/clintosaurous
 export _STARTDATETIME=`date +%s`
+
+
+# Get Clintosaurous username and group name from configuration file.
+CONFUSER=`python3 -c "
+import yaml
+with open('$CLINTCONF', newline='') as y:
+    conf = yaml.safe_load(y)
+try:
+    username = conf['user']['name']
+    group = conf['user']['group']
+    print(f'{username} {group}')
+except KeyError:
+    True
+"`
+if [ $? -ne 0 ]; then
+    echo "Error parsing username or user group name from $CLINTCONF" >&2
+    exit 1
+fi
+for VALUE in $CONFUSER
+do
+    if [ -z "$CLINTUSER" ]; then export CLINTUSER=$VALUE
+    else export CLINTGROUP=$VALUE ; fi
+done
+if [ -z "$CLINTUSER" ] || [ -z "$CLINTGROUP" ]; then
+    echo "Error parsing username or user group name from $CLINTCONF" >&2
+    exit 1
+fi
 
 
 # Check if logged in as supplied username.
@@ -213,13 +241,21 @@ _usage ()
     SCRIPTNAME=`basename $0`
     echo "
 Shell script include library of commonly used functions and variables by
-Clintosaurous IPAM scripts.
+Clintosaurous scripts.
 
 $SCRIPTNAME [-h | --help]
 . $SCRIPTNAME
 
-Variabls:
-    LOG_DIR
+Variables:
+    CLINTETC
+        Clintosaurous tools configuration directory.
+    CLINTCORE
+        Clintosaurous core tools directory.
+    CLINTCONF
+        Clintosaurous tools global configuration file.
+    CLINTHOME
+        Clintosaurous tools home directory.
+    CLINTLOG
         Logging directory location.
     PATH
         Updated as needed.
@@ -227,6 +263,12 @@ Variabls:
         Updated as needed.
 
 Functions:
+    check_login_user
+        Ensures the current user is the user specified.
+            $ check_login_user root
+    check_valid_os
+        Validate running on a support OS.
+            $ check_valid_os
     datestamp
         Outputs a date stamp in YYYY-MM-DD format.
     error_out
@@ -239,6 +281,8 @@ Functions:
         Echoes the message supplied to STDOUT prepending a timestamp. If
         multiple messages supplied, all will be echoed on seperate lines each
         prepended with a timestamp.
+    log_msg
+        Like log_msg except messages to be output are taken from STDIN.
     seconds_breakdown
         Takes the number of seconds supplies and breaks it down into days,
         hours, minutes, and seconds and echoes the breakout in the below
@@ -270,3 +314,11 @@ fi
 if [ -z `echo "$PYTHONPATH" | grep '/opt/clintosaurous/core/lib/python'` ]; then
     export PYTHONPATH="${PYTHONPATH:+${PYTHONPATH}:}/opt/clintosaurous/core/lib/python"
 fi
+
+# Check for other Clintosaurous module general.sh scripts.
+for DIR in `ls $CLINTHOME/`
+do
+    if [ "$DIR" = "core" ]; then continue ; fi
+    MODFILE=$CLINTHOME/$DIR/lib/sh/general.sh
+    if [ -e $MODFILE ]; then . $MODFILE ; fi
+done
