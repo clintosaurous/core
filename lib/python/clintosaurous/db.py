@@ -5,11 +5,11 @@ pymysql helper module to simplify database connectivity.
 """
 
 # Version: 1.0.0
-# Last Updated: 2022-05-30
+# Last Updated: 2022-06-08
 #
 # Change Log:
 #   v1.0.0:
-#       Initial creation. (2022-05-30)
+#       Initial creation. (2022-06-08)
 #
 # Note: See repository commit logs for change details.
 
@@ -38,7 +38,7 @@ _parser_db_group.add_argument(
     "--db-host",
     help=f"""
         Database server DNS name or IP address. No default, but a default
-        can be supplied in {_core_conf} using the 'db-host' option.
+        can be supplied in {_core_conf}.
     """,
     type=str
 )
@@ -46,7 +46,7 @@ _parser_db_group.add_argument(
     "--db-user",
     help=f"""
         Database server name. No default, but a default can be supplied in
-        {_core_conf} using the 'db-user' option.
+        {_core_conf}.
     """,
     type=str
 )
@@ -54,7 +54,7 @@ _parser_db_group.add_argument(
     "--db-passwd",
     help=f"""
         Database user password. No default, but a default can be supplied in
-        {_core_conf} using the 'db-passwd' option.
+        {_core_conf}.
     """,
     type=str
 )
@@ -68,7 +68,7 @@ _parser_db_group.add_argument(
     "--db-ssl",
     help="""
         Enable MySQL SSL connectivity. Default: False, but can be set in
-        {_core_conf} using the 'db-ssl' option.
+        {_core_conf}.
     """,
     action="store_true"
 )
@@ -76,8 +76,7 @@ _parser_db_group.add_argument(
     "--db-ssl-ca",
     help=f"""
         Path to SSL certificate authority (CA) file for the SSL certificate.
-        Default: None, but can be set in {_core_conf} using the 'db-ssl-ca'
-        option.
+        Default: None, but can be set in {_core_conf}.
     """,
     type=str
 )
@@ -85,8 +84,7 @@ _parser_db_group.add_argument(
     "--db-ssl-cert",
     help=f"""
         Path to SSL certificate file for the SSL certificate.
-        Default: None, but can also be set in {_core_conf} using the
-        'db-ssl-cert' option.
+        Default: None, but can also be set in {_core_conf}.
     """,
     type=str
 )
@@ -94,8 +92,7 @@ _parser_db_group.add_argument(
     "--db-ssl-key",
     help=f"""
         Path to SSL certificate private key file for the SSL certificate.
-        Default: None, but can also be set in {_core_conf} using the
-        'db-ssl-key' option.
+        Default: None, but can also be set in {_core_conf}.
     """,
     type=str
 )
@@ -132,7 +129,7 @@ class connect:
 
     ssl
         Enable/disable MySQL connection encryption. See --db-ssl CLI
-        option help. Default: None
+        option help. Default: False
 
     ssl_ca
         See --db_ssl_ca CLI option help.
@@ -186,7 +183,7 @@ class connect:
             ["ssl-key", ssl_key, opts.db_ssl_key, False, None],
             ["autocommit", autocommit, None, False, False],
             ["connect-timeout", connect_timeout, None, True, None]
-     ]
+        ]
         try:
             db_conf = conf["database"]
         except KeyError:
@@ -226,10 +223,13 @@ class connect:
         # Set connection option values for connecting to database.
         self.options = {}
         for name, passed, cli, required, default in options:
-            if passed is not None:
+            if (
+                passed is not None
+                and (not isinstance(passed, str) or len(passed))
+            ):
                 self.options[name] = passed
             elif cli is not None:
-                    self.options[name] = cli
+                self.options[name] = cli
             else:
                 try:
                     self.options[name] = conf[name]
