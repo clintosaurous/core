@@ -268,15 +268,3 @@ fi
 if [ -z `echo "$PYTHONPATH" | grep '/opt/clintosaurous/core/lib/python'` ]; then
     export PYTHONPATH="${PYTHONPATH:+${PYTHONPATH}:}/opt/clintosaurous/core/lib/python"
 fi
-
-
-# Source include files from other Clintosaurous packages.
-for DIR in `ls /opt/clintosaurous`
-do
-    # Skip Clintosaurous core directory to avoid reloading this script.
-    if [ "$DIR" = 'core' ]; then continue ; fi
-    INCFILE="/opt/clintosaurous/$DIR/lib/sh/general.sh"
-    if [ -e $INCFILE ]; then
-        . $INCFILE
-    fi
-done
