@@ -465,7 +465,7 @@ class cgi:
         # default to that, or default to ''. 
         else:
             value = self.form_values.getvalue(field["name"])
-            if value is None:
+            if value is None or value == '':
                 try:
                     return field["default"], False
                 except KeyError:
@@ -572,7 +572,7 @@ class cgi:
                         else:
                             checked = ''
                 else:
-                    if value != '':
+                    if value is None or value == '':
                         try:
                             form_checked = field["checked"]
                         except KeyError:
@@ -587,7 +587,7 @@ class cgi:
 
                 return_txt += (
                     f'<label><input type="checkbox" name="{field["name"]}" ' +
-                    f'value="{value}" ' +
+                    f'value="{field["value"]}" ' +
                     f'class="field_input"{checked} /></label>\n'
                 )
 
