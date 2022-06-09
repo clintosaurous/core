@@ -21,10 +21,14 @@ import clintosaurous.log as log
 import os
 import re
 import sys
+import yaml
 
 
 # Predefined variables.
-lock_file = "/run/lock/{0}.pid".format(os.path.basename(sys.argv[0]))
+lock_file = f'/run/lock/{os.path.basename(sys.argv[0])}.pid'
+etc = '/etc/clintosaurous'
+home = '/opt/clintosaurous'
+conf_file = f'{etc}/clintosaurous.yaml'
 
 
 def datestamp(usr_time=None):
@@ -130,3 +134,10 @@ def unlock():
         os.remove(lock_file)
 
 # End: unlock()
+
+
+if os.path.exists(conf_file):
+    with open(conf_file, newline='') as c:
+        conf = yaml.safe_load(c)
+else:
+    conf = {}
