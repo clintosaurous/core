@@ -215,6 +215,7 @@ class connect:
             )
 
         self.connection = pymysql.connect(**self.connect_opts)
+        self.pymysql = pymysql
 
     # End __int__()
 
